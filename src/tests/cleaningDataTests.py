@@ -227,41 +227,13 @@ def test07_removeMissingorNullValues(monkeypatch):
         ]
         assert result == expected_output
 
-def test08_removeMissingorNullValues(monkeypatch):
+def test08_handleCaseSensitivity(monkeypatch):
         '''
         Test case to check if the function removes the records with missing or null values
         And checks if the data contains data which could mislead in the analysis (Defined in REMOVINGS.py)
 
         Test08: 
-        Entity where the role is a integer, not a string -> whole entity should be removed
-        '''
-        mock_json_data = json.dumps([
-            {"lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": 123},
-            {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": {"admin": True}},
-            {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
-        ])
-    
-        def mock_open(*args, **kwargs):
-            return StringIO(mock_json_data)
-    
-        monkeypatch.setattr('builtins.open', mock_open)
-    
-        handler = APIDataHandler("http://localhost:8002/employees")
-    
-        result = handler.removeMissingorNullValues()
-    
-        expected_output = [
-            {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
-        ]
-        assert result == expected_output
-
-def test09_removeMissingorNullValues(monkeypatch):
-        '''
-        Test case to check if the function removes the records with missing or null values
-        And checks if the data contains data which could mislead in the analysis (Defined in REMOVINGS.py)
-
-        Test09: 
-        Entity where the role is in different case sensitive -> all should be converted to lower case
+        Case where the case sensitivity should be handled -> all str values should be lowercased
         '''
         mock_json_data = json.dumps([
             {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
@@ -276,21 +248,52 @@ def test09_removeMissingorNullValues(monkeypatch):
     
         handler = APIDataHandler("http://localhost:8002/employees")
     
-        result = handler.removeMissingorNullValues()
+        result = handler.handleCaseSensitivity()
     
         expected_output = [
-            {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-            {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-            {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
+            {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
+            {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
+            {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
         ]
         assert result == expected_output
 
-def test10_removeMissingorNullValues(monkeypatch):
+def test09_handleCaseSensitivity(monkeypatch):
         '''
         Test case to check if the function removes the records with missing or null values
         And checks if the data contains data which could mislead in the analysis (Defined in REMOVINGS.py)
 
         Test09: 
+        Case where the case sensitivity should be handled, but no case insensitives are present -> nothing should be changed
+        '''
+        mock_json_data = json.dumps([
+            {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
+            {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
+            {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        ])
+    
+        def mock_open(*args, **kwargs):
+            return StringIO(mock_json_data)
+    
+        monkeypatch.setattr('builtins.open', mock_open)
+    
+        handler = APIDataHandler("http://localhost:8002/employees")
+    
+        result = handler.handleCaseSensitivity()
+    
+        expected_output = [
+            {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
+            {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
+            {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        ]
+        assert result == expected_output
+
+
+def test10_removeDuplicates(monkeypatch):
+        '''
+        Test case to check if the function removes the records with missing or null values
+        And checks if the data contains data which could mislead in the analysis (Defined in REMOVINGS.py)
+
+        Test10: 
         Case where duplicates are present, one should be removed
         '''
         mock_json_data = json.dumps([
@@ -305,13 +308,101 @@ def test10_removeMissingorNullValues(monkeypatch):
     
         handler = APIDataHandler("http://localhost:8002/employees")
     
-        result = handler.removeMissingorNullValues()
+        result = handler.removeDuplicates()
     
         expected_output = [
             
             {"customerId": 12345,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "John","lastname": "Doe","companyNumber": "COMP123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
         ]
         assert result == expected_output
+    
+def test11_removeDuplicates(monkeypatch): 
+        '''
+        Test case to check if the function removes the records with missing or null values
+        And checks if the data contains data which could mislead in the analysis (Defined in REMOVINGS.py)
+
+        Test11: 
+        Case where no duplicates are present, zero should be removed
+        '''
+        mock_json_data = json.dumps([
+            {"customerId": 12345,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "John","lastname": "Doe","companyNumber": "COMP123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
+            {"customerId": 12346,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "John","lastname": "Doe","companyNumber": "COMP123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
+        ])
+    
+        def mock_open(*args, **kwargs):
+            return StringIO(mock_json_data)
+    
+        monkeypatch.setattr('builtins.open', mock_open)
+    
+        handler = APIDataHandler("http://localhost:8002/employees")
+    
+        result = handler.removeDuplicates()
+    
+        expected_output = [
+            
+            {"customerId": 12345,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "John","lastname": "Doe","companyNumber": "COMP123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
+            {"customerId": 12346,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "John","lastname": "Doe","companyNumber": "COMP123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
+        ]
+        assert result == expected_output
+
+def test12_removeDuplicates(monkeypatch):
+        '''
+        Test case to check if the function removes the records with missing or null values
+        And checks if the data contains data which could mislead in the analysis (Defined in REMOVINGS.py)
+
+        Test12: 
+        Case where no duplicates are present, but keys are different, zero should be removed
+        '''
+        mock_json_data = json.dumps([
+            {"customersId": 12345,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "John","lastname": "Doe","companyNumber": "COMP123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
+            {"customerId": 12346,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "John","lastname": "Doe","companyNumber": "COMP123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
+        ])
+    
+        def mock_open(*args, **kwargs):
+            return StringIO(mock_json_data)
+    
+        monkeypatch.setattr('builtins.open', mock_open)
+    
+        handler = APIDataHandler("http://localhost:8002/employees")
+    
+        result = handler.removeDuplicates()
+    
+        expected_output = [
+            
+            {"customersId": 12345,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "John","lastname": "Doe","companyNumber": "COMP123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
+            {"customerId": 12346,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "John","lastname": "Doe","companyNumber": "COMP123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
+        ]
+        assert result == expected_output
+
+def test13_removeAllWhitespaces(monkeypatch):
+        '''
+        Test case to check if the function removes the records with missing or null values
+        And checks if the data contains data which could mislead in the analysis (Defined in REMOVINGS.py)
+
+        Test13: 
+        Case where whitespaces are present, whitespaces should be remove
+        '''
+        mock_json_data = json.dumps([
+            {"customersId": 12345,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "Jo hn","lastname": "D oe","companyNumber": "COMP 123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
+            {"customerId": 12346,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "Jo hn","lastname": "Do e","companyNumber": "COMP 123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
+        ])
+    
+        def mock_open(*args, **kwargs):
+            return StringIO(mock_json_data)
+    
+        monkeypatch.setattr('builtins.open', mock_open)
+    
+        handler = APIDataHandler("http://localhost:8002/employees")
+    
+        result = handler.removeAllWhitespaces()
+    
+        expected_output = [
+            
+            {"customersId": 12345,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "John","lastname": "Doe","companyNumber": "COMP123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
+            {"customerId": 12346,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "John","lastname": "Doe","companyNumber": "COMP123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
+        ]
+        assert result == expected_output
+      
     
       
         
