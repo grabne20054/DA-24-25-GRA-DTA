@@ -8,7 +8,6 @@ class APIDataHandler:
         self.url = url
 
     def fetch(self):
-        print("fetch")
         response = requests.get(self.url)
         if response.status_code != 200:
             raise Exception("API response: {}".format(response.status_code))
