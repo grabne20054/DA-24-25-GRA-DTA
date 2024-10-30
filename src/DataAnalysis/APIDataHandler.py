@@ -4,18 +4,31 @@ from DataAnalysis.REMOVINGS import REMOVINGS
 
 
 class APIDataHandler:
+    """
+    Class to handle API data
+    """
     def __init__(self, url):
         self.url = url
 
-    def fetch(self):
+    def fetch(self) -> list:
+        """
+        Fetches data from the API
+        
+        Returns:
+            list: List of dictionaries containing the data
+        """
         response = requests.get(self.url)
         if response.status_code != 200:
             raise Exception("API response: {}".format(response.status_code))
         return response.json()
     
-    def removeMissingorNullValues(self):
-        '''with open('DataAnalysis/test.json', 'r') as f: # MOCK
-            data = json.load(f)'''
+    def removeMissingorNullValues(self) -> list:
+        """
+        Removes missing or null values
+
+        Returns:
+            list: List of dictionaries containing the clean data
+        """
         data = self.fetch()
 
         clean = []
@@ -36,9 +49,14 @@ class APIDataHandler:
                 clean.append(i)
         return clean
 
-    def handleCaseSensitivity(self):
-        '''with open('DataAnalysis/test.json', 'r') as f: # MOCK
-            data = json.load(f)'''
+    def handleCaseSensitivity(self) -> list:
+        """
+        Handles case sensitivity
+        
+        Returns:
+            
+            list: List of dictionaries containing the clean data
+        """
         data = self.removeMissingorNullValues()
 
         for i in data:
@@ -48,10 +66,13 @@ class APIDataHandler:
 
         return data
     
-    def removeDuplicates(self):
-        '''with open('DataAnalysis/test.json', 'r') as f: # MOCK
-            data = json.load(f)'''
-        
+    def removeDuplicates(self) -> list:
+        """
+        Removes duplicates
+
+        Returns:
+            list: List of dictionaries containing the clean data
+        """
         data = self.handleCaseSensitivity()
 
         seen = set()
@@ -65,10 +86,13 @@ class APIDataHandler:
 
         return clean
     
-    def removeAllWhitespaces(self):
-        '''with open('DataAnalysis/test.json', 'r') as f:
-            data = json.load(f)'''
+    def removeAllWhitespaces(self) -> list:
+        """
+        Removes all whitespaces
         
+        Returns:
+            list: List of dictionaries containing the clean data
+        """
         data = self.removeDuplicates()
 
         for i in data:
@@ -77,7 +101,13 @@ class APIDataHandler:
                     i[key] = str(i[key]).replace(" ", "")
         return data
 
-    def start(self):
+    def start(self) -> list:
+        """
+        Starts the data handling process
+
+        Returns:
+            list: List of dictionaries containing the clean data, invokes whole preprocessing pipeline
+        """
         return self.removeAllWhitespaces()          
                         
 
