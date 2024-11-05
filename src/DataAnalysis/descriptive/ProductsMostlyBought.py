@@ -6,6 +6,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
     """
     def __init__(self) -> None:
         self.handler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/ordersProducts")
+        self.productshandler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/products")
     
     def collect(self) -> list:
         """
@@ -30,15 +31,31 @@ class ProductsMostlyBought(DescriptiveAnalysis):
 
         for i in data:
             if i['productId'] not in seen:
-                products_bought[i['productId']] = i['productAmount']
+                products_bought[self._getProductNameById(i['productId'])] = i['productAmount']
                 seen.add(i['productId'])
             else:
-                products_bought[i['productId']] += i['productAmount']
+                products_bought[self._getProductNameById(i['productId'])] += i['productAmount']
 
         return products_bought
 
 
+    def _getProductNameById(self, product_id: int) -> str:
+        """
+        Gets the product name from the product ID
+
+        Args:
+            product_id (int): Product ID
+
+        Returns:
+            str: Product name
+        """
+        products = self.productshandler.start()
+
+        for i in products:
+            if i['productId'] == product_id:
+                return i['name']
         
+        return None    
 
     def report(self):
         pass

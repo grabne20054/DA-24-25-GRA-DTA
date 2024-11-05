@@ -6,6 +6,7 @@ class RoutesAmount(DescriptiveAnalysis):
     """
     def __init__(self) -> None:
         self.handler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/routesOrders")
+        self.routeshandler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/routes")
     
     def collect(self) -> list:
         """
@@ -30,12 +31,30 @@ class RoutesAmount(DescriptiveAnalysis):
 
         for i in data:
             if i['routeId'] not in seen:
-                routes[i['routeId']] = 1
+                routes[self._getRouteNameById(i['routeId'])] = 1
                 seen.add(i['routeId'])
             else:
-                routes[i['routeId']] += 1
+                routes[self._getRouteNameById(i['routeId'])] += 1
 
         return routes
 
     def report(self):
         pass
+
+    def _getRouteNameById(self, route_id: int) -> str:
+        """
+        Gets the route name from the route ID
+
+        Args:
+            route_id (int): Route ID
+
+        Returns:
+            str: Route name
+        """
+        routes = self.routeshandler.start()
+
+        for i in routes:
+            if i['routeId'] == route_id:
+                return i['name']
+        
+        return None
