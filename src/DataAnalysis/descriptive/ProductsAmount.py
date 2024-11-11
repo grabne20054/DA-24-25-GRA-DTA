@@ -21,14 +21,14 @@ class ProductsAmount(DescriptiveAnalysis):
         Perform the analysis
 
         Returns:
-            dict: Dictionary containing the products and the amount
+            dict: Dictionary containing the products and the stock
         """
         data = self.collect()
 
         products = {}
 
         for i in data:    
-            products[i['name']] = i['amount']
+            products[i['name']] = i['stock']
 
         return products
 
