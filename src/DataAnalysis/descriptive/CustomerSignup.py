@@ -89,7 +89,7 @@ class CustomerSignup(DescriptiveAnalysis):
         for i in data:
             i['signedUp'] = i['signedUp'].split("t")[0]
             if last_days > 0:
-                if datetime.strptime(i['signedUp'], "%Y-%m-%dT%H:%M:%S.%f") >= datetime.now() - timedelta(days=last_days):
+                if datetime.strptime(i['signedUp'], "%Y-%m-%d") >= datetime.now() - timedelta(days=last_days):
                     growth[i['signedUp']] += 1
                     total += 1
 
