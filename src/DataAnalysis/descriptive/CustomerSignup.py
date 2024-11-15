@@ -94,9 +94,11 @@ class CustomerSignup(DescriptiveAnalysis):
                     total += 1
 
                     cumulative_growth[i['signedUp']] = total
-            else:
+            elif last_days == 0:
                 growth[i['signedUp']] += 1
                 total += 1
                 cumulative_growth[i['signedUp']] = total
+            else:
+                return None # error handling
         
         return {"growth": dict(growth), "cumulative_growth": cumulative_growth}

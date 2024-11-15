@@ -1,5 +1,6 @@
 from DataAnalysis.APIDataHandlerFactory import APIDataHandlerFactory
 from DataAnalysis.descriptive.DescriptiveAnalysis import DescriptiveAnalysis
+from datetime import datetime, timedelta
 
 class ProductsMostlyBought(DescriptiveAnalysis):
     """ Products Mostly Bought
@@ -7,6 +8,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
     def __init__(self) -> None:
         self.handler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/ordersProducts")
         self.productshandler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/products")
+        self.ordershandler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/orders")
     
     def collect(self) -> list:
         """
@@ -17,26 +19,27 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         """
         return self.handler.start()
     
-    def perform(self) -> dict:
+    def perform(self, last_days: int = 0, year: bool = False, month: bool = False ) -> dict:
         """
         Perform the analysis
+        
+        Args:
+
+            last_days (int, optional): Number of days to consider. Defaults to 0.
+            year (bool, optional): If True, returns the purchases of the current year. Defaults to False.
+            month (bool, optional): If True, returns purchases of the current month. Defaults to False.
 
         Returns:
-            dict: Dictionary containing the products and the amount
+            dict: Dictionary containing the products mostly bought
         """
         data = self.collect()
 
-        products_bought = {}
-        seen = set()
-
-        for i in data:
-            if i['productId'] not in seen:
-                products_bought[self._getProductNameById(i['productId'])] = i['productAmount']
-                seen.add(i['productId'])
-            else:
-                products_bought[self._getProductNameById(i['productId'])] += i['productAmount']
-
-        return products_bought
+        if year:
+            return self._setYearlyPurchases(data)
+        elif month:
+            return self._setMonthlyPurchases(data)
+        else:
+            return self._setPurchasesByDays(data, last_days)
 
 
     def _getProductNameById(self, product_id: int) -> str:
@@ -55,7 +58,66 @@ class ProductsMostlyBought(DescriptiveAnalysis):
             if i['productId'] == product_id:
                 return i['name']
         
-        return None    
+        return None
+    
+    def _getOrderDate(self, order_id: int) -> str:
+
+        for i in self.ordershandler.start():
+            if i['orderId'] == order_id:
+                return i['orderDate']
+        
+        return None
+
+    def _setYearlyPurchases(self, data: list) -> dict:
+        products_bought = {}
+        seen = set()
+        for i in data:
+            if datetime.strptime(self._getOrderDate(i['orderId']), "%Y-%m-%dT%H:%M:%S.%f").year == datetime.now().year:
+                if i['productId'] not in seen:
+                    products_bought[self._getProductNameById(i['productId'])] = i['productAmount']
+                    seen.add(i['productId'])
+                else:
+                    products_bought[self._getProductNameById(i['productId'])] += i['productAmount']
+
+        return products_bought
+    
+    def _setMonthlyPurchases(self, data: list) -> dict:
+        products_bought = {}
+        seen = set()
+        for i in data:
+            if datetime.strptime(self._getOrderDate(i['orderId']), "%Y-%m-%dT%H:%M:%S.%f").month == datetime.now().month:
+                if i['productId'] not in seen:
+                    products_bought[self._getProductNameById(i['productId'])] = i['productAmount']
+                    seen.add(i['productId'])
+                else:
+                    products_bought[self._getProductNameById(i['productId'])] += i['productAmount']
+
+        return products_bought
+    
+    def _setPurchasesByDays(self, data: list, last_days: int) -> dict:
+        products_bought = {}
+        seen = set()
+        for i in data:
+            if last_days > 0:
+                if datetime.strptime(self._getOrderDate(i['orderId']), "%Y-%m-%dT%H:%M:%S.%f") >= datetime.now() - timedelta(days=last_days):
+                    if i['productId'] not in seen:
+                        products_bought[self._getProductNameById(i['productId'])] = i['productAmount']
+                        seen.add(i['productId'])
+                    else:
+                        products_bought[self._getProductNameById(i['productId'])] += i['productAmount']
+            elif last_days == 0:
+                if i['productId'] not in seen:
+                    products_bought[self._getProductNameById(i['productId'])] = i['productAmount']
+                    seen.add(i['productId'])
+                else:
+                    products_bought[self._getProductNameById(i['productId'])] += i['productAmount']
+
+            else: 
+                return None # error handling
+
+        return products_bought
+    
+    
 
     def report(self):
         pass
