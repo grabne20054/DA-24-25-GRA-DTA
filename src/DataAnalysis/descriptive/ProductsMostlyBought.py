@@ -21,7 +21,15 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         Returns:
             list: List of dictionaries containing the data
         """
-        return self.handler.start()
+        try:
+            return self.handler.start()
+        except ConnectionRefusedError as e:
+            print("Connection refused: ", e)
+
+        except ConnectionError as e:
+            print("Connection error: ", e)
+        except Exception as e:
+            print("Error: ", e)
     
     def perform(self, last_days: int = 0, year: bool = False, month: bool = False ) -> dict:
         """
@@ -37,6 +45,8 @@ class ProductsMostlyBought(DescriptiveAnalysis):
             dict: Dictionary containing the products mostly bought
         """
         data = self.collect()
+        if data == None:
+            raise Exception("No data found")
 
         if year:
             return self._setYearlyPurchases(data)
@@ -55,6 +65,11 @@ class ProductsMostlyBought(DescriptiveAnalysis):
 
         Returns:
             str: Product name
+
+        Raises:
+            Exception: Product not found
+            Exception: Order not found
+            ValueError: The number of days should be greater than zero
         """
         products = self.productshandler.start()
 
@@ -62,7 +77,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
             if i['productId'] == product_id:
                 return i['name']
         
-        return None
+        raise Exception("Product not found")
     
     def _getOrderDate(self, order_id: int) -> str:
 
@@ -70,7 +85,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
             if i['orderId'] == order_id:
                 return i['orderDate']
         
-        return None
+        raise Exception("Order not found")
 
     def _setYearlyPurchases(self, data: list) -> dict:
         products_bought = {}
@@ -115,9 +130,8 @@ class ProductsMostlyBought(DescriptiveAnalysis):
                     seen.add(i['productId'])
                 else:
                     products_bought[self._getProductNameById(i['productId'])] += i['productAmount']
-
-            else: 
-                return None # error handling
+            elif last_days < 0:
+                raise ValueError("The number of days should be greater than zero")
 
         return products_bought
     

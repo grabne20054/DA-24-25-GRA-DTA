@@ -26,11 +26,14 @@ class ProductOrdersCorrelation(DiagnosticAnalysis):
         Returns:
             tuple: Tuple of dataframes containing the data
         """
-        
-        orders = self.orderhandler.start()
-        ordersProducts = self.ordersProductshandler.start()
-        products = self.productshandler.start()
-        customers = self.customerhandler.start()
+        try:
+            orders = self.orderhandler.start()
+            ordersProducts = self.ordersProductshandler.start()
+            products = self.productshandler.start()
+            customers = self.customerhandler.start()
+        except Exception as e:
+            print("Error: ", e)
+            return None, None, None
 
         # convert to dataframes
         df_orders = pd.DataFrame(orders)
@@ -46,13 +49,21 @@ class ProductOrdersCorrelation(DiagnosticAnalysis):
         
         Returns:
             tuple: Tuple of correlation values between productAmount and price, orderDate, businessSector in format (price, order date, business sector)
+        
+        Raises:
+            Exception: No data found
         """
         df_orders, df_ordersProducts, df_products, df_customers = self.collect()
-
+        if df_orders == None or df_ordersProducts == None or df_products == None or df_customers == None:
+            raise Exception("No data found")
         # Merge the dataframes like a SQL join
-        df_ordersProducts = pd.merge(df_ordersProducts, df_orders, on='orderId')
-        df_ordersProducts = pd.merge(df_ordersProducts, df_products, on='productId')
-        df_ordersProducts = pd.merge(df_ordersProducts, df_customers, on='customerReference')
+        try:
+            df_ordersProducts = pd.merge(df_ordersProducts, df_orders, on='orderId')
+            df_ordersProducts = pd.merge(df_ordersProducts, df_products, on='productId')
+            df_ordersProducts = pd.merge(df_ordersProducts, df_customers, on='customerReference')
+        except Exception as e:
+            print("Error: ", e)
+            return None
         
 
         # Drop unnecessary columns

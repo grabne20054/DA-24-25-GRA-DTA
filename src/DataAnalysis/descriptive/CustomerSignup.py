@@ -22,7 +22,15 @@ class CustomerSignup(DescriptiveAnalysis):
         Returns:
             list: List of dictionaries containing the data
         """
-        return self.handler.start()
+        try:
+            return self.handler.start()
+        except ConnectionRefusedError as e:
+            print("Connection refused: ", e)
+
+        except ConnectionError as e:
+            print("Connection error: ", e)
+        except Exception as e:
+            print("Error: ", e)
         
     def perform(self, last_days: int = 0, year: bool = False, month: bool = False) -> dict:
         """
@@ -34,11 +42,21 @@ class CustomerSignup(DescriptiveAnalysis):
             month (bool, optional): If True, returns the monthly growth. Defaults to False.
 
         Returns:
-            dict: Dictionary containing growth as dictionary and cumulative growth data as dictionary
+            dict: Dictionary containing growth as dictionary and cumulative growth data as dictionary#
+        
+        Raises:
+            ValueError: If the number of days is less than zero
         """
-        data = self.collect()
 
-        data.sort(key=lambda i: datetime.strptime(i['signedUp'], "%Y-%m-%dT%H:%M:%S.%f")) # Sort by signedUp date
+        data = self.collect()
+        if data == None:
+            raise Exception("No data found")
+
+        try:
+            data.sort(key=lambda i: datetime.strptime(i['signedUp'], "%Y-%m-%dT%H:%M:%S.%f")) # Sort by signedUp date
+        except AttributeError as e:
+            print("Attribute Error: ", e)
+            return None
 
         if year:
             return self._setYearlyGrowth(data)
@@ -102,7 +120,7 @@ class CustomerSignup(DescriptiveAnalysis):
                 growth[i['signedUp']] += 1
                 total += 1
                 cumulative_growth[i['signedUp']] = total
-            else:
-                return None # error handling
+            elif last_days < 0:
+                raise ValueError("The number of days should be greater than zero")
         
         return {"growth": dict(growth), "cumulative_growth": cumulative_growth}

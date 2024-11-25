@@ -25,9 +25,13 @@ class ItemBoughtCorrelation(DiagnosticAnalysis):
         Returns:
             tuple: Tuple of dataframes containing the data
         """
-        orders = self.ordershandler.start()
-        ordersProducts = self.ordersProductshandler.start()
-        products = self.productshandler.start()
+        try:
+            orders = self.ordershandler.start()
+            ordersProducts = self.ordersProductshandler.start()
+            products = self.productshandler.start()
+        except Exception as e:
+            print("Error: ", e)
+            return None, None, None
 
         # convert to dataframes
         df_orders = pd.DataFrame(orders)
@@ -45,19 +49,23 @@ class ItemBoughtCorrelation(DiagnosticAnalysis):
             combination_product_amount (int, optional): Amount of products to combine. Defaults to 2.
             
             Returns:
-                
                 list[str]: List of product names        
         """
 
         df_orders, df_ordersProducts, df_products = self.collect()
+        if df_orders == None or df_ordersProducts == None or df_products == None:
+            raise Exception("No data found")
 
         # Merge the dataframes like a SQL join
-        df_orders = pd.merge(df_orders, df_ordersProducts, on='orderId')
-        df_orders = pd.merge(df_orders, df_products, on='productId')
-
-        # Drop columns that are not needed
+        try:
+            df_orders = pd.merge(df_orders, df_ordersProducts, on='orderId')
+            df_orders = pd.merge(df_orders, df_products, on='productId')
+        except Exception as e:
+            print("Error: ", e)
+            return None
+        
         df_orders = df_orders.drop(['description', 'deliveryDate', 'deleted_x', 'customerReference', 'imagePath', 'deleted_y', 'stock', 'orderDate', 'name', 'price', 'productAmount'], axis=1)
-
+        
         # Create a dictionary of sets to store items bought in each order
         z = defaultdict(set)
         for order_id, product_id in zip(df_orders['orderId'], df_orders['productId']):
@@ -107,6 +115,9 @@ class ItemBoughtCorrelation(DiagnosticAnalysis):
 
         Returns:
             str: Product name
+
+        Raises:
+            Exception: Product not found
         """
         products = self.productshandler.start()
 
@@ -114,4 +125,4 @@ class ItemBoughtCorrelation(DiagnosticAnalysis):
             if i['productId'] == product_id:
                 return i['name']
         
-        return None
+        raise Exception("Product not found")

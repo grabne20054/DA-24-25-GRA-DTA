@@ -19,7 +19,15 @@ class RoutesAmount(DescriptiveAnalysis):
         Returns:
             list: List of dictionaries containing the data
         """
-        return self.handler.start()
+        try:
+            return self.handler.start()
+        except ConnectionRefusedError as e:
+            print("Connection refused: ", e)
+
+        except ConnectionError as e:
+            print("Connection error: ", e)
+        except Exception as e:
+            print("Error: ", e)
     
     def perform(self) -> dict:
         """
@@ -27,8 +35,13 @@ class RoutesAmount(DescriptiveAnalysis):
 
         Returns:
             dict: Dictionary containing the routes and the amount
+        
+        Raises:
+            Exception: No data found
         """
         data = self.collect()
+        if data == None:
+            raise Exception("No data found")
 
         routes = {}
         seen = set()
@@ -54,6 +67,9 @@ class RoutesAmount(DescriptiveAnalysis):
 
         Returns:
             str: Route name
+        
+        Raises:
+            Exception: Route not found
         """
         routes = self.routeshandler.start()
 
@@ -61,4 +77,4 @@ class RoutesAmount(DescriptiveAnalysis):
             if i['routeId'] == route_id:
                 return i['name']
         
-        return None
+        raise Exception("Route not found")

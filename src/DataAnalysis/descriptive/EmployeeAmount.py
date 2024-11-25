@@ -19,7 +19,15 @@ class EmployeeAmount(DescriptiveAnalysis):
         Returns:
             list: List of dictionaries containing the data
         """
-        return self.handler.start()
+        try:
+            return self.handler.start()
+        except ConnectionRefusedError as e:
+            print("Connection refused: ", e)
+
+        except ConnectionError as e:
+            print("Connection error: ", e)
+        except Exception as e:
+            print("Error: ", e)
     
     def perform(self) -> dict:
         """
@@ -29,6 +37,8 @@ class EmployeeAmount(DescriptiveAnalysis):
             dict: Dictionary containing the roles and the amount of employees
         """
         data = self.collect()
+        if data == None:
+            raise Exception("No data found")
 
         employees = Counter([i['role'] for i in data])
 
