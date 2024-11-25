@@ -1,11 +1,16 @@
 from DataAnalysis.APIDataHandlerFactory import APIDataHandlerFactory
 from DataAnalysis.descriptive.DescriptiveAnalysis import DescriptiveAnalysis
 
+from os import getenv
+
+from dotenv import load_dotenv
+load_dotenv()
+
 class ProductsAmount(DescriptiveAnalysis):
     """ Amount of Products
     """
     def __init__(self) -> None:
-        self.handler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/products")
+        self.handler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/products")
 
     def collect(self) -> list:
         """

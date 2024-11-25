@@ -1,14 +1,18 @@
 from DataAnalysis.APIDataHandlerFactory import APIDataHandlerFactory
 from DataAnalysis.descriptive.DescriptiveAnalysis import DescriptiveAnalysis
 from datetime import datetime, timedelta
+from os import getenv
+
+from dotenv import load_dotenv
+load_dotenv()
 
 class ProductsMostlyBought(DescriptiveAnalysis):
     """ Products Mostly Bought
     """
     def __init__(self) -> None:
-        self.handler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/ordersProducts")
-        self.productshandler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/products")
-        self.ordershandler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/orders")
+        self.handler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/ordersProducts")
+        self.productshandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/products")
+        self.ordershandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/orders")
     
     def collect(self) -> list:
         """

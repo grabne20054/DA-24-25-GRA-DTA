@@ -4,14 +4,18 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from itertools import combinations
 from collections import defaultdict
+from os import getenv
+
+from dotenv import load_dotenv
+load_dotenv()
 
 class ItemBoughtCorrelation(DiagnosticAnalysis):
     """
     Class for analyzing the correlation between items bought by customers"""
     def __init__(self) -> None:
-        self.ordershandler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/orders")
-        self.ordersProductshandler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/ordersProducts")
-        self.productshandler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/products")
+        self.ordershandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/orders")
+        self.ordersProductshandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/ordersProducts")
+        self.productshandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/products")
 
 
     def collect(self) -> tuple:

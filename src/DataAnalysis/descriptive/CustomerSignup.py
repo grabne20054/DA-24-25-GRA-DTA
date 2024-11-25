@@ -3,13 +3,17 @@ from DataAnalysis.APIDataHandlerFactory import APIDataHandlerFactory
 
 from datetime import datetime, timedelta
 from collections import defaultdict
+from os import getenv
+
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class CustomerSignup(DescriptiveAnalysis):
     """ Trend of Customer Growth
     """
     def __init__(self) -> None:
-        self.handler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/customers")
+        self.handler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/customers")
 
     def collect(self) -> list:
         """

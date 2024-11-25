@@ -1,12 +1,16 @@
 from DataAnalysis.APIDataHandlerFactory import APIDataHandlerFactory
 from DataAnalysis.descriptive.DescriptiveAnalysis import DescriptiveAnalysis
 from collections import Counter
+from os import getenv
+
+from dotenv import load_dotenv
+load_dotenv()
 
 class EmployeeAmount(DescriptiveAnalysis):
     """ Amount of Employees by Role
     """
     def __init__(self) -> None:
-        self.handler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/employees")
+        self.handler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/employees")
 
     def collect(self) -> list:
         """

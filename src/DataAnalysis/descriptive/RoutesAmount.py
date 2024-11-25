@@ -1,12 +1,16 @@
 from DataAnalysis.APIDataHandlerFactory import APIDataHandlerFactory
 from DataAnalysis.descriptive.DescriptiveAnalysis import DescriptiveAnalysis
+from os import getenv
+
+from dotenv import load_dotenv
+load_dotenv()
 
 class RoutesAmount(DescriptiveAnalysis):
     """ Amount of Routes
     """
     def __init__(self) -> None:
-        self.handler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/routesOrders")
-        self.routeshandler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/routes")
+        self.handler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/routesOrders")
+        self.routeshandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/routes")
     
     def collect(self) -> list:
         """

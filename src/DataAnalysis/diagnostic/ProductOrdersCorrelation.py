@@ -2,15 +2,20 @@ from DataAnalysis.diagnostic.DiagnosticAnalysis import DiagnosticAnalysis
 from DataAnalysis.APIDataHandlerFactory import APIDataHandlerFactory
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+from os import getenv
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class ProductOrdersCorrelation(DiagnosticAnalysis):
     """ Class for analyzing the correlation between product orders"""
     def __init__(self) -> None:
-        self.orderhandler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/orders")
-        self.ordersProductshandler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/ordersProducts")
-        self.productshandler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/products")
-        self.customerhandler = APIDataHandlerFactory.create_data_handler("http://localhost:8002/customers")
+        self.orderhandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/orders")
+        self.ordersProductshandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/ordersProducts")
+        self.productshandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/products")
+        self.customerhandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/customers")
 
         self.df_ordersProducts = None
 
