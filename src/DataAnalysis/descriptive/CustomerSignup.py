@@ -59,19 +59,30 @@ class CustomerSignup(DescriptiveAnalysis):
             return None
 
         if year:
-            return self._setYearlyGrowth(data)
+            return self._getYearlyGrowth(data)
         
         elif month:
-            return self._setMonthlyGrowth(data)
+            return self._getMonthlyGrowth(data)
         
         else:
-            return self._setGrowthByDays(data, last_days)
+            return self._getGrowthByDays(data, last_days)
         
 
     def report(self):
         pass
 
-    def _setYearlyGrowth(self, data: list) -> dict:
+    def _getYearlyGrowth(self, data: list) -> dict:
+        """
+        gets the yearly growth of the customers
+        
+        
+        Args:
+            data (list): List of dictionaries containing the data
+            
+        Returns:
+            dict: Dictionary containing the growth and cumulative growth data
+        """
+
         yearlygrowth = defaultdict(int)
         cumulative_growth = {}
         total = 0 
@@ -86,7 +97,17 @@ class CustomerSignup(DescriptiveAnalysis):
 
         return {"growth": dict(yearlygrowth), "cumulative_growth": cumulative_growth}
     
-    def _setMonthlyGrowth(self, data: list) -> dict:
+    def _getMonthlyGrowth(self, data: list) -> dict:
+        """
+        gets the monthly growth of the customers
+
+        Args:
+            data (list): List of dictionaries containing the data
+        
+        Returns:
+            dict: Dictionary containing the growth and cumulative growth data
+        """
+
         monthlygrowth = defaultdict(int)
         cumulative_growth = {}
         total = 0
@@ -101,7 +122,20 @@ class CustomerSignup(DescriptiveAnalysis):
         
         return {"growth": dict(monthlygrowth), "cumulative_growth": cumulative_growth}
     
-    def _setGrowthByDays(self, data: list, last_days: int) -> dict:
+    def _getGrowthByDays(self, data: list, last_days: int) -> dict:
+        """
+        gets the growth of the customers by the number of days
+
+        Args:
+            data (list): List of dictionaries containing the data
+            last_days (int): Number of days to consider
+
+        Returns:
+            dict: Dictionary containing the growth and cumulative growth data
+
+        Raises:
+            ValueError: If the number of days is less than zero
+        """
         
         growth = defaultdict(int)
         total = 0

@@ -49,11 +49,11 @@ class ProductsMostlyBought(DescriptiveAnalysis):
             raise Exception("No data found")
 
         if year:
-            return self._setYearlyPurchases(data)
+            return self._getYearlyPurchases(data)
         elif month:
-            return self._setMonthlyPurchases(data)
+            return self._getMonthlyPurchases(data)
         else:
-            return self._setPurchasesByDays(data, last_days)
+            return self._getPurchasesByDays(data, last_days)
 
 
     def _getProductNameById(self, product_id: int) -> str:
@@ -80,14 +80,38 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         raise Exception("Product not found")
     
     def _getOrderDate(self, order_id: int) -> str:
+        """
+        Gets the order date from the order ID
 
+        Args:
+            order_id (int): Order ID
+
+        Returns:
+            str: Order date
+
+        Raises:
+            Exception: Order not found
+        """
         for i in self.ordershandler.start():
             if i['orderId'] == order_id:
                 return i['orderDate']
         
         raise Exception("Order not found")
 
-    def _setYearlyPurchases(self, data: list) -> dict:
+    def _getYearlyPurchases(self, data: list) -> dict:
+        """
+        gets the yearly purchases of the products
+        
+        Args:
+            data (list): List of dictionaries containing the data
+            
+        Returns:
+            dict: Dictionary containing the products mostly bought
+
+        Raises:
+            ValueError: The number of days should be greater than zero
+        """
+        
         products_bought = {}
         seen = set()
         for i in data:
@@ -100,7 +124,17 @@ class ProductsMostlyBought(DescriptiveAnalysis):
 
         return products_bought
     
-    def _setMonthlyPurchases(self, data: list) -> dict:
+    def _getMonthlyPurchases(self, data: list) -> dict:
+        """
+        gets the monthly purchases of the products
+
+        Args:
+            data (list): List of dictionaries containing the data
+
+        Returns:
+            dict: Dictionary containing the products mostly bought
+        """
+
         products_bought = {}
         seen = set()
         for i in data:
@@ -113,7 +147,21 @@ class ProductsMostlyBought(DescriptiveAnalysis):
 
         return products_bought
     
-    def _setPurchasesByDays(self, data: list, last_days: int) -> dict:
+    def _getPurchasesByDays(self, data: list, last_days: int) -> dict:
+        """
+        gets the purchases of the products by the number of days
+
+        Args:
+            data (list): List of dictionaries containing the data
+            last_days (int): Number of days to consider
+
+        Returns:
+            dict: Dictionary containing the products mostly bought
+        
+        Raises:
+            ValueError: If the number of days is less than zero
+        """
+        
         products_bought = {}
         seen = set()
         for i in data:
