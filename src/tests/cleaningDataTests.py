@@ -18,10 +18,10 @@ def test01_removeMissingorNullValues(monkeypatch):
     '''
    
     mock_json_data = [
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": None},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": None},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"}
     ]
 
     def mock_fetch(url):
@@ -34,9 +34,9 @@ def test01_removeMissingorNullValues(monkeypatch):
     result = handler.removeMissingorNullValues()
 
     expected_output = [
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"}
     ]
     assert result == expected_output
 
@@ -50,10 +50,10 @@ def test02_removeMissingorNullValues(monkeypatch):
     '''
     
     mock_json_data = [
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": ""},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": ""},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"}
     ]
 
     def mock_fetch(url):
@@ -66,9 +66,9 @@ def test02_removeMissingorNullValues(monkeypatch):
     result = handler.removeMissingorNullValues()
 
     expected_output = [
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"}
     ]
     assert result == expected_output
 
@@ -82,10 +82,10 @@ def test03_removeMissingorNullValues(monkeypatch):
     '''
     
     mock_json_data = [
-        {"lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        {"lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"}
     ]
 
     def mock_fetch(url):
@@ -98,10 +98,10 @@ def test03_removeMissingorNullValues(monkeypatch):
     result = handler.removeMissingorNullValues()
 
     expected_output = [
-        {"lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        {"lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"}
     ]
     assert result == expected_output
 
@@ -114,10 +114,10 @@ def test04_removeMissingorNullValues(monkeypatch):
     Entity where a field is missing but not in the list of fields which removes the whole entity and the role is "" -> whole record should be removed
     '''
     mock_json_data = [
-        {"lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": ""},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        {"lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": ""},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"}
     ]
 
     def mock_fetch(url):
@@ -130,9 +130,9 @@ def test04_removeMissingorNullValues(monkeypatch):
     result = handler.removeMissingorNullValues()
 
     expected_output = [
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"}
     ]
     assert result == expected_output
 
@@ -145,10 +145,10 @@ def test05_removeMissingorNullValues(monkeypatch):
     Entity where a field is missing but not in the list of fields which removes the whole entity and the role is None -> whole record should be removed
     '''
     mock_json_data = [
-        {"lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": None},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        {"lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": None},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"}
     ]
 
     def mock_fetch(url):
@@ -161,9 +161,9 @@ def test05_removeMissingorNullValues(monkeypatch):
     result = handler.removeMissingorNullValues()
 
     expected_output = [
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"}
     ]
     assert result == expected_output
 
@@ -176,10 +176,10 @@ def test06_removeMissingorNullValues(monkeypatch):
     Different entities with different missing values first one the firstname and the role is "", third one the role is None -> both should be removed 
     '''
     mock_json_data = [
-        {"lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": ""},
-        {"firstname": "Hans", "": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "None"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": None},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        {"lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": ""},
+        {"firstname": "Max", "": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "None"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": None},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"}
     ]
 
     def mock_fetch(url):
@@ -192,8 +192,8 @@ def test06_removeMissingorNullValues(monkeypatch):
     result = handler.removeMissingorNullValues()
 
     expected_output = [
-        {"firstname": "Hans",  "password": "1234", "email": "hans.franz@gmail.com", "role": "None"},
-        {"firstname": "Hans", "lastname": "Franz" , "password" : "1234" ,"email": "hans.franz@gmail.com", "role": "admin"}
+        {"firstname": "Max",  "password": "1234", "email": "max.mustermann@gmail.com", "role": "None"},
+        {"firstname": "Max", "lastname": "Mustermann" , "password" : "1234" ,"email": "max.mustermann@gmail.com", "role": "admin"}
     ]
     assert result == expected_output
 
@@ -206,9 +206,9 @@ def test07_removeMissingorNullValues(monkeypatch):
     Entity where the key is "" -> field should be removed
     '''
     mock_json_data = [
-        {"": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "None"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        {"": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "None"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"}
     ]
 
     def mock_fetch(url):
@@ -221,9 +221,9 @@ def test07_removeMissingorNullValues(monkeypatch):
     result = handler.removeMissingorNullValues()
 
     expected_output = [
-        {"password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz" , "password" : "1234" ,"email": "hans.franz@gmail.com", "role": "None"},
-        {"firstname": "Hans", "lastname": "Franz" , "password" : "1234" ,"email": "hans.franz@gmail.com", "role": "admin"}
+        {"password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann" , "password" : "1234" ,"email": "max.mustermann@gmail.com", "role": "None"},
+        {"firstname": "Max", "lastname": "Mustermann" , "password" : "1234" ,"email": "max.mustermann@gmail.com", "role": "admin"}
     ]
     assert result == expected_output
 
@@ -236,9 +236,9 @@ def test08_handleCaseSensitivity(monkeypatch):
     Case where the case sensitivity should be handled -> all str values should be lowercased
     '''
     mock_json_data = [
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "Admin"},
-        {"firstname": "Hans", "lastname": "Franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "ADMIN"}
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "Admin"},
+        {"firstname": "Max", "lastname": "Mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "ADMIN"}
     ]
 
     def mock_fetch(url):
@@ -251,9 +251,9 @@ def test08_handleCaseSensitivity(monkeypatch):
     result = handler.handleCaseSensitivity()
 
     expected_output = [
-        {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
+        {"firstname": "max", "lastname": "mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "max", "lastname": "mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "max", "lastname": "mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
     ]
     assert result == expected_output
 
@@ -266,9 +266,9 @@ def test09_handleCaseSensitivity(monkeypatch):
     Case where the case sensitivity should be handled, but no case insensitives are present -> nothing should be changed
     '''
     mock_json_data = [
-        {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        {"firstname": "max", "lastname": "mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "max", "lastname": "mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "max", "lastname": "mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"}
     ]
 
     def mock_fetch(url):
@@ -281,9 +281,9 @@ def test09_handleCaseSensitivity(monkeypatch):
     result = handler.handleCaseSensitivity()
 
     expected_output = [
-        {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"},
-        {"firstname": "hans", "lastname": "franz", "password": "1234", "email": "hans.franz@gmail.com", "role": "admin"}
+        {"firstname": "max", "lastname": "mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "max", "lastname": "mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"},
+        {"firstname": "max", "lastname": "mustermann", "password": "1234", "email": "max.mustermann@gmail.com", "role": "admin"}
     ]
     assert result == expected_output
 
