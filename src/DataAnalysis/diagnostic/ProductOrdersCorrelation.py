@@ -2,6 +2,7 @@ from DataAnalysis.diagnostic.DiagnosticAnalysis import DiagnosticAnalysis
 from DataAnalysis.APIDataHandlerFactory import APIDataHandlerFactory
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+from typing import Tuple
 from os import getenv
 
 from dotenv import load_dotenv
@@ -19,7 +20,8 @@ class ProductOrdersCorrelation(DiagnosticAnalysis):
 
         self.df_ordersProducts = None
 
-    def collect(self) -> tuple:
+
+    def collect(self) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Collects data from the API
         
@@ -54,8 +56,11 @@ class ProductOrdersCorrelation(DiagnosticAnalysis):
             Exception: No data found
         """
         df_orders, df_ordersProducts, df_products, df_customers = self.collect()
-        if df_orders == None or df_ordersProducts == None or df_products == None or df_customers == None:
+        if df_orders is None or df_ordersProducts is None or df_products is None or df_customers is None:
             raise Exception("No data found")
+        elif df_orders.empty or df_ordersProducts.empty or df_products.empty or df_customers.empty:
+            raise Exception("One or more dataframes are empty")
+
         # Merge the dataframes like a SQL join
         try:
             df_ordersProducts = pd.merge(df_ordersProducts, df_orders, on='orderId')
@@ -66,8 +71,17 @@ class ProductOrdersCorrelation(DiagnosticAnalysis):
             return None
         
 
-        # Drop unnecessary columns
-        df_ordersProducts = df_ordersProducts.drop(columns=['orderId', 'productId', 'addressId', 'customerId', 'description', 'deliveryDate',  'stock', 'imagePath', 'lastname', 'firstname', 'email', 'password', 'phoneNumber', 'signedUp', 'role', 'companyNumber', 'deleted_x', 'deleted_y', 'deleted'])
+        # List of columns to be dropped
+        columns_to_drop = [
+            'orderId', 'productId', 'addressId', 'customerId', 'description', 
+            'deliveryDate', 'stock', 'imagePath', 'lastname', 'firstname', 
+            'email', 'password', 'phoneNumber', 'signedUp', 'role', 
+            'companyNumber', 'deleted_x', 'deleted_y', 'deleted'
+        ]
+
+        # Drop columns only if they are present in the DataFrame
+        df_ordersProducts = df_ordersProducts.drop(columns=df_ordersProducts.columns.intersection(columns_to_drop))
+
         
         # date to month
         df_ordersProducts['orderDate'] = pd.to_datetime(df_ordersProducts['orderDate'])
@@ -83,6 +97,10 @@ class ProductOrdersCorrelation(DiagnosticAnalysis):
         price_correlation = df_ordersProducts[['productAmount','price']].corr('pearson')
         date_correlation = df_ordersProducts[['productAmount','orderDate']].corr('spearman')
         user_correlation = df_ordersProducts[['productAmount','businessSector']].corr('spearman')
+
+        print(price_correlation)
+        print(date_correlation)
+        print(user_correlation)
 
         return price_correlation.loc['productAmount', 'price'], date_correlation.loc['productAmount', 'orderDate'], user_correlation.loc['productAmount', 'businessSector'] # get certain value from the correlation matrix
 
