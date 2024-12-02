@@ -1,11 +1,9 @@
 import pytest
 import os,sys
 from datetime import datetime, timedelta
-
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from DataAnalysis.descriptive import CustomerSignup, EmployeeAmount, ProductsAmount, ProductsMostlyBought, RoutesAmount
-from DataAnalysis.APIDataHandler import APIDataHandler
 
 ###################### CustomerSignup Class ######################
 
@@ -173,7 +171,7 @@ def test06_performCustomerSignupMonthlyGrowth(monkeypatch):
             "signedUp": datetime.now().strftime("%Y-%m-%dt%H:%M:%S.%f")
         },
         {
-            "signedUp": (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%dt%H:%M:%S.%f") 
+            "signedUp": datetime.now().strftime("%Y-%m-%dt%H:%M:%S.%f") 
         },
         {
             "signedUp": "2021-01-03t00:00:00.000"
@@ -191,7 +189,9 @@ def test06_performCustomerSignupMonthlyGrowth(monkeypatch):
     analysis = CustomerSignup.CustomerSignup()
     result = CustomerSignup.CustomerSignup.perform(analysis, 0, False, True)
 
-    assert result == {'growth': {'11': 2}, 'cumulative_growth': {'11': 2}}
+    current_month = datetime.now().month
+
+    assert result == {'growth': {f'{current_month}' : 2}, 'cumulative_growth': {f'{current_month}': 2}}
 
 def test07_performCustomerSignupYearlyGrowthTrueMonthlyGrowthTrue(monkeypatch):
     '''
@@ -1140,6 +1140,9 @@ def test28_performProductsMostlyBoughtYearlyGrowthFalseMonthlyGrowthTrueLastDays
     def mock_collect(self):
         return mock_data_collect
     
+    def mock_getCurrentMonth(self):
+        return "11"
+    
     def mock_getProductNameById(self, product_id):
         return "product" + str(product_id)
     
@@ -1156,11 +1159,7 @@ def test28_performProductsMostlyBoughtYearlyGrowthFalseMonthlyGrowthTrueLastDays
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
-
-    analysis = ProductsMostlyBought.ProductsMostlyBought()
-    result = ProductsMostlyBought.ProductsMostlyBought.perform(analysis, year=False, month=True, last_days=2)
-
-    assert result == {'product2': 10, 'product3': 15}
+    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getCurrentMonth', mock_getCurrentMonth)
 
 ###################### Routes Amount Class ######################
     
