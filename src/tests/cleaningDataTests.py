@@ -383,8 +383,8 @@ def test13_removeAllWhitespaces(monkeypatch):
     Case where whitespaces are present, whitespaces should be remove
     '''
     mock_json_data = [
-        {"customersId": 12345,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "Jo hn","lastname": "D oe","companyNumber": "COMP 123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
-        {"customerId": 12346,"email": "example@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "Jo hn","lastname": "Do e","companyNumber": "COMP 123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
+        {"customersId": 12345,"email": " exam ple@example.com","phoneNumber": "+1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "Jo hn","lastname": "D oe","companyNumber": "COMP 123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
+        {"customerId": 12346,"email": "exa mple@example.com","phoneNumber": " +1234567890","addressId": 6789,"password": "encrypted_password_here","firstname": "Jo hn","lastname": "Do e","companyNumber": "COMP 123456","role": "admin","signedUp": "2024-01-01T12:34:56Z","businessSector": "technology"},
     ]
 
     def mock_fetch(url):
