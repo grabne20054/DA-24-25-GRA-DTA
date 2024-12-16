@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from itertools import combinations
 from collections import defaultdict
+from typing import Tuple
 from os import getenv
 
 from dotenv import load_dotenv
@@ -18,7 +19,7 @@ class ItemBoughtCorrelation(DiagnosticAnalysis):
         self.productshandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/products")
 
 
-    def collect(self) -> tuple:
+    def collect(self) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Collects data from the API
 
@@ -52,9 +53,11 @@ class ItemBoughtCorrelation(DiagnosticAnalysis):
                 list[str]: List of product names        
         """
 
-        df_orders, df_ordersProducts, df_products = self.collect()
-        if df_orders == None or df_ordersProducts == None or df_products == None:
+        df_orders, df_ordersProducts, df_products= self.collect()
+        if df_orders is None or df_ordersProducts is None or df_products is None:
             raise Exception("No data found")
+        elif df_orders.empty or df_ordersProducts.empty or df_products.empty:
+            raise Exception("One or more dataframes are empty")
 
         # Merge the dataframes like a SQL join
         try:
@@ -64,8 +67,9 @@ class ItemBoughtCorrelation(DiagnosticAnalysis):
             print("Error: ", e)
             return None
         
-        df_orders = df_orders.drop(['description', 'deliveryDate', 'deleted_x', 'customerReference', 'imagePath', 'deleted_y', 'stock', 'orderDate', 'name', 'price', 'productAmount'], axis=1)
+        columns_to_drop = ['description', 'deliveryDate', 'deleted_x', 'customerReference', 'imagePath', 'deleted_y', 'stock', 'orderDate', 'name', 'price', 'productAmount']
         
+        df_orders = df_orders.drop(columns=df_orders.columns.intersection(columns_to_drop))
         # Create a dictionary of sets to store items bought in each order
         z = defaultdict(set)
         for order_id, product_id in zip(df_orders['orderId'], df_orders['productId']):
@@ -74,6 +78,9 @@ class ItemBoughtCorrelation(DiagnosticAnalysis):
         # Create a dictionary to count combinations of items
         d = defaultdict(int)
         unique_products = set(df_orders['productId'])
+        if len(unique_products) <= 2:
+            raise Exception("Not enough products to analyze")
+
         for i in range(2, len(unique_products)):
             combs = combinations(unique_products, i)
             for comb in combs:
@@ -81,9 +88,7 @@ class ItemBoughtCorrelation(DiagnosticAnalysis):
                     if set(comb).issubset(items):
                         d[tuple(comb)] += 1
 
-
         product_combinations = {}
-        
 
         # Sort and display the results
         sorted_combinations = list(reversed(sorted([[v, k] for k, v in d.items()])))
