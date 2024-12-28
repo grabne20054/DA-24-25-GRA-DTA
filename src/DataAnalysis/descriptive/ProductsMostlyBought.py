@@ -1,4 +1,4 @@
-from DataAnalysis.APIDataHandlerFactory import APIDataHandlerFactory
+from DataAnalysis.preprocessing.APIDataHandlerFactory import APIDataHandlerFactory
 from DataAnalysis.descriptive.DescriptiveAnalysis import DescriptiveAnalysis
 from datetime import datetime, timedelta
 from os import getenv

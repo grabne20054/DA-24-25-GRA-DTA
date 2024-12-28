@@ -1,5 +1,5 @@
 from DataAnalysis.diagnostic.DiagnosticAnalysis import DiagnosticAnalysis
-from DataAnalysis.APIDataHandlerFactory import APIDataHandlerFactory
+from DataAnalysis.preprocessing.APIDataHandlerFactory import APIDataHandlerFactory
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from itertools import combinations

@@ -5,7 +5,7 @@ import os,sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from DataAnalysis.APIDataHandler import APIDataHandler
+from DataAnalysis.preprocessing.APIDataHandler import APIDataHandler
 
 
 def test01_removeMissingorNullValues(monkeypatch):

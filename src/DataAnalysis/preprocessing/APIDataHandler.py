@@ -1,5 +1,5 @@
 import requests, json
-from DataAnalysis.REMOVINGS import REMOVINGS
+from preprocessing.REMOVINGS import REMOVINGS
 
 
 
