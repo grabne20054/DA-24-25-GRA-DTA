@@ -1,6 +1,7 @@
 
 from predictive.CustomerGrowth import CustomerGrowth
 import numpy as np
+import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import LSTM
@@ -12,13 +13,16 @@ import threading
 import time
 
 
-mlflow.set_tracking_uri("http://192.168.33.24:5000")
-mlflow.set_experiment('CustomerGrowth')
-print('Successfully connected to MLFlow server')
-
 class CustomerGrowthOptimizer:
     def __init__(self) -> None:
         self.customer_growth = CustomerGrowth()
+        self.setup_mlflow()
+
+    def setup_mlflow(self):
+        mlflow.set_tracking_uri("http://192.168.33.24:5000")
+        mlflow.set_experiment('CustomerGrowth')
+        print('Successfully connected to MLFlow server')
+
 
     def collect(self):
         return self.customer_growth.provide_data_to_perform()
@@ -43,13 +47,12 @@ class CustomerGrowthOptimizer:
                             'and learning rate =', learning_rate, '...')
                         
                         model = Sequential([
-                            LSTM(num_units, input_shape=(X_train.shape[1], X_train.shape[2])),
+                            LSTM(num_units, input_shape=(X_train.shape[1], X_train.shape[2]), kernel_regularizer=tf.keras.regularizers.l2(0.01), dropout=dropout  ),
                             Dense(1)
                         ])
-                        optimizer = Adam(learning_rate=learning_rate)
-                        model.compile(optimizer=optimizer, loss='mse')
+                        model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse', metrics=['mse'])
 
-                        history = model.fit(X_train, y_train, epochs=epoch, batch_size=64, validation_data=(X_test, y_test), verbose=1)
+                        history = model.fit(X_train, y_train, epochs=epoch, batch_size=64,  validation_data=(X_test, y_test), verbose=1)
 
             
                         num_epochs = len(history.history['val_loss'])
@@ -84,6 +87,8 @@ class CustomerGrowthOptimizer:
         mlflow.log_metric('train_mse', train_mse)
         mlflow.log_metric('val_mse', val_mse)
 
+        self.get_best_model()
+
     def get_best_model(self):
         client = MlflowClient()
         experiment = client.get_experiment_by_name('CustomerGrowth')
@@ -100,8 +105,13 @@ class CustomerGrowthOptimizer:
         )[0]
             
         best_run_params = best_run.data.params
+            
+        num_units = int(best_run_params['num_units'])
+        dropout = float(best_run_params['dropout'])
+        learning_rate = float(best_run_params['learning_rate'])
+        epoch = int(best_run_params['epoch'])
 
-        self.customer_growth.perform(best_run_params['num_units'], best_run_params['dropout'], best_run_params['learning_rate'], best_run_params['epoch'])
+        self.customer_growth.perform(num_units, dropout, learning_rate, epoch)
 
 if __name__ == '__main__':
     cgo = CustomerGrowthOptimizer()

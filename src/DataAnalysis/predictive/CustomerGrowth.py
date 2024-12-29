@@ -108,22 +108,15 @@ class CustomerGrowth(PredictiveAnalysis):
         X_train, X_test, y_train, y_test, scaler_X, scaler_y = self.provide_data_to_perform()
 
         model = Sequential([
-                        LSTM(num_units, input_shape=(X_train.shape[1], X_train.shape[2])),
+                        LSTM(num_units, input_shape=(X_train.shape[1], X_train.shape[2]), kernel_regularizer=tf.keras.regularizers.l2(0.01), dropout=dropout  ),
                         Dense(1)
                     ])
-        model.compile(optimizer=Adam(), loss='mse', metrics=['mse'], learning_rate=learning_rate, dropout=dropout)
+        model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse', metrics=['mse'])
 
         history = model.fit(X_train, y_train, epochs=epochs, batch_size=64,  validation_data=(X_test, y_test), verbose=1)
         
-        plt.plot(history.history['loss'], label='Train Loss')
-        plt.plot(history.history['val_loss'], label='Validation Loss')
-        print('Train Loss:', history.history['loss'][-1])
-        print('Validation Loss:', history.history['val_loss'][-1])
 
         print(model.summary())
-        plt.legend()
-        plt.show()
-
         y_pred = model.predict(X_test)
         y_pred_denormalized = self._denormalize_data(y_pred, scaler_y)
         y_test_denormalized = self._denormalize_data(y_test, scaler_y)
