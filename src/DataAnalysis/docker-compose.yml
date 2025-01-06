@@ -1,7 +1,7 @@
 
 services:
-  customer-growth-optimizer:
-    container_name: customer-growth-optimizer
+  cumulative-customer-growth-optimizer:
+    container_name: cumulative-customer-growth-optimizer
     build:
       context: .  # Root directory, containing all folders
       dockerfile: /predictive/Dockerfile  # Dockerfile inside the 'predictive' folder

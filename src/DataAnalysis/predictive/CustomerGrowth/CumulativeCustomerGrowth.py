@@ -1,5 +1,5 @@
-from predictive.PredictiveAnalysis import PredictiveAnalysis
-from descriptive.CustomerSignup import CustomerSignup
+from DataAnalysis.predictive.PredictiveAnalysis import PredictiveAnalysis
+from DataAnalysis.descriptive.CustomerSignup import CustomerSignup
 from sklearn.model_selection import train_test_split
 import numpy as np
 from os import getenv
@@ -9,16 +9,15 @@ import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import LSTM
+from tensorflow.keras.layers import Dense, LSTM, Bidirectional
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.regularizers import l2
 import matplotlib.pyplot as plt
-import mlflow
 
 load_dotenv()
 
-class CustomerGrowth(PredictiveAnalysis):
+class CumulativeCustomerGrowth(PredictiveAnalysis):
     def __init__(self) -> None:
         self.customerSignup = CustomerSignup() 
     
@@ -35,17 +34,19 @@ class CustomerGrowth(PredictiveAnalysis):
 
     def _prepare_data(self):
         data = self.collect()
+        
         X = np.array([self._to_datetime_timestamp(key) for key in list(data['cumulative_growth'].keys())])
         y = np.array([int(data['cumulative_growth'][key]) for key in data['cumulative_growth']])
-        day_of_week = [datetime.fromtimestamp(date).weekday() for date in X]
-        month_of_year = [datetime.fromtimestamp(date).month for date in X]
-
+        
+        day_of_week = np.array([datetime.fromtimestamp(date).weekday() for date in X]) 
+        month_of_year = np.array([datetime.fromtimestamp(date).month for date in X])
         X = np.column_stack((X, day_of_week, month_of_year))
+
         y = y.reshape(-1, 1)
 
         if X.size == 0 or y.size == 0:
             raise ValueError("Data preparation resulted in empty X or y arrays.")
-
+        
         return X, y
 
     def _to_datetime_timestamp(self, date: str):
@@ -61,7 +62,7 @@ class CustomerGrowth(PredictiveAnalysis):
     def _train_test_split(self, sequence_length=300):
         X, y = self._prepare_data()
         X_seq, y_seq = self._create_sequences(X, y, sequence_length)
-        return train_test_split(X_seq, y_seq, test_size=0.2, random_state=0, shuffle=False)
+        return train_test_split(X_seq, y_seq, test_size=0.7, random_state=0, shuffle=False)
     
     def _normalize_data(self, X_train, X_test, y_train, y_test):
         if X_train.size == 0 or X_test.size == 0:
@@ -79,7 +80,7 @@ class CustomerGrowth(PredictiveAnalysis):
 
         return X_train, X_test, y_train, y_test, scaler_X, scaler_y
     
-    def _denormalize_data(self, y_pred, scaler_y):
+    def _denormalize_data(self, y_pred, scaler_y: MinMaxScaler):
         return scaler_y.inverse_transform(y_pred)
     
     def _create_sequences(self, X, y, sequence_length):
@@ -103,20 +104,29 @@ class CustomerGrowth(PredictiveAnalysis):
             X_test = X_test.reshape((X_test.shape[0], X_test.shape[1], 1))
         return X_train, X_test
 
-    def perform(self, num_units, dropout, learning_rate, epochs):
+    def perform(self, num_units, dropout, learning_rate, epochs, l2_reg):
 
         X_train, X_test, y_train, y_test, scaler_X, scaler_y = self.provide_data_to_perform()
 
         model = Sequential([
-                        LSTM(num_units, input_shape=(X_train.shape[1], X_train.shape[2]), kernel_regularizer=tf.keras.regularizers.l2(0.01), dropout=dropout  ),
-                        Dense(1)
-                    ])
-        model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse', metrics=['mse'])
+            Bidirectional(LSTM(num_units, input_shape=(X_train.shape[1], X_train.shape[2]), dropout=dropout, return_sequences=True, recurrent_regularizer=l2(l2_reg),)),
+            Bidirectional(LSTM(num_units, dropout=dropout,  return_sequences=True, recurrent_regularizer=l2(l2_reg))),
+            Bidirectional(LSTM(num_units, dropout=dropout, recurrent_regularizer=l2(l2_reg))),
+            Dense(1)
+        ])
+        model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse', metrics=['mae'])
 
-        history = model.fit(X_train, y_train, epochs=epochs, batch_size=64,  validation_data=(X_test, y_test), verbose=1)
-        
+        ea = EarlyStopping(monitor='val_loss', verbose=1, patience=100)
+
+        history = model.fit(X_train, y_train, epochs=epochs, batch_size=32, validation_data=(X_test, y_test), verbose=1, callbacks=[ea])
+
+        print("Training MSE:", history.history['loss'][-1])
+        print("Validation MSE:", history.history['val_loss'][-1])
+        print("Training MAE:", history.history['mae'][-1])
+        print("Validation MAE:", history.history['val_mae'][-1])
 
         print(model.summary())
+        
         y_pred = model.predict(X_test)
         y_pred_denormalized = self._denormalize_data(y_pred, scaler_y)
         y_test_denormalized = self._denormalize_data(y_test, scaler_y)
@@ -125,11 +135,19 @@ class CustomerGrowth(PredictiveAnalysis):
         print("Predicted Values:", y_pred_denormalized.flatten())
         print("True Values:", y_test_denormalized.flatten())
         
+        
         X_test_dates = [self._to_datetime_from_timestamp(ts[0]) for ts in X_test[:, 0, :]]
+        plt.figure(figsize=(12, 6))
+        plt.scatter(X_test_dates, y_test_denormalized, label='True', color='red')
+        plt.plot(X_test_dates, y_test_denormalized, label='True', color='red')
+        plt.scatter(X_test_dates, y_pred_denormalized, label='Predicted', color='blue')
+        plt.plot(X_test_dates, y_pred_denormalized, label='Predicted', color='blue')
 
-        plt.plot(X_test_dates, y_test_denormalized, label='True')
-        plt.plot(X_test_dates, y_pred_denormalized, label='Predicted')
-        plt.legend()
+        for i, txt in enumerate(range(len(X_test_dates))):
+            plt.annotate(txt, (X_test_dates[i], y_test_denormalized[i]), textcoords="offset points", xytext=(0,10), ha='center', color='red')
+            plt.annotate(txt, (X_test_dates[i], y_pred_denormalized[i]), textcoords="offset points", xytext=(0,10), ha='center', color='blue')
+
+        plt.tight_layout()
         plt.show()
 
         return y_pred_denormalized

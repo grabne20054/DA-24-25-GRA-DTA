@@ -14,6 +14,7 @@ COPY ../requirements.txt /src/DataAnalysis/requirements.txt
 COPY ../descriptive /src/DataAnalysis/descriptive
 COPY ../preprocessing /src/DataAnalysis/preprocessing
 COPY ../predictive /src/DataAnalysis/predictive
+COPY ../predictive/CustomerGrowth /src/DataAnalysis/predictive/CustomerGrowth
 
 # COPY .ENV file
 COPY ../.env /src/DataAnalysis/.env
@@ -22,4 +23,4 @@ COPY ../.env /src/DataAnalysis/.env
 RUN pip install -r /src/DataAnalysis/requirements.txt
 
 # Command to run the application
-CMD ["python", "/src/DataAnalysis/predictive/CustomerGrowthOptimizer.py"]
+CMD ["python", "/src/DataAnalysis/predictive/CustomerGrowth/CumulativeCustomerGrowthOptimizer.py"]
