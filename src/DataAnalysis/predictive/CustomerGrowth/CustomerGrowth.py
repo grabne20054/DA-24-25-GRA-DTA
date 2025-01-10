@@ -21,7 +21,7 @@ TF_ENABLE_ONEDNN_OPTS=0
 
 load_dotenv()
 
-class CumulativeCustomerGrowth(PredictiveAnalysis):
+class CustomerGrowth(PredictiveAnalysis):
     def __init__(self) -> None:
         self.customerSignup = CustomerSignup() 
     
@@ -39,23 +39,23 @@ class CumulativeCustomerGrowth(PredictiveAnalysis):
     def _prepare_data(self, lag, rolling_mean):
         data = self.collect()
 
-        X = np.array([self._to_datetime_timestamp(key) for key in list(data['cumulative_growth'].keys())])
-        y = np.array([int(data['cumulative_growth'][key]) for key in data['cumulative_growth']])
+        X = np.array([self._to_datetime_timestamp(key) for key in list(data['growth'].keys())])
+        y = np.array([int(data['growth'][key]) for key in data['growth']])
 
-        df = pd.DataFrame(y, columns=['cumulative_growth'])
+        df = pd.DataFrame(y, columns=['growth'])
         df['timestamp'] = X
         
         # add lags
         for i in range(1, lag + 1):	
-            df[f'lag_{i}'] = df['cumulative_growth'].shift(i)
+            df[f'lag_{i}'] = df['growth'].shift(i)
         
         # add rolling mean
-        df['rolling_mean'] = df['cumulative_growth'].rolling(window=rolling_mean).mean()
+        df['rolling_mean'] = df['growth'].rolling(window=rolling_mean).mean()
 
         df.dropna(inplace=True)
         
-        X = np.array([self._to_datetime_timestamp(key) for key in list(data['cumulative_growth'].keys())])
-        y = np.array([int(data['cumulative_growth'][key]) for key in data['cumulative_growth']])
+        X = np.array([self._to_datetime_timestamp(key) for key in list(data['growth'].keys())])
+        y = np.array([int(data['growth'][key]) for key in data['growth']])
 
 
         day_of_dataset = datetime.fromtimestamp(X[0]).day
@@ -67,9 +67,9 @@ class CumulativeCustomerGrowth(PredictiveAnalysis):
         
     
 
-        X = df.drop(columns=['cumulative_growth']).values
+        X = df.drop(columns=['growth']).values
 
-        y = df['cumulative_growth'].values
+        y = df['growth'].values
 
         if X.size == 0 or y.size == 0:
             raise ValueError("Data preparation resulted in empty X or y arrays.")
@@ -128,7 +128,8 @@ class CumulativeCustomerGrowth(PredictiveAnalysis):
         return y_scaled
     
     def _create_sequences(self, X_train, y_train, X_test, y_test):
-        # sequence_length = min(len(X_train), len(X_test)) - 1
+        #fixed sequence length?
+        #sequence_length = min(len(X_train), len(X_test)) - 1
         sequence_length = 10 # mock
         if sequence_length <= 0:
             raise ValueError(f"Invalid sequence_length: {sequence_length}. Must be > 0.")
@@ -145,6 +146,9 @@ class CumulativeCustomerGrowth(PredictiveAnalysis):
             X_test_seq.append(X_test[i:i + sequence_length])
             y_test_seq.append(y_test[i + sequence_length])
         
+        print(np.array(X_train_seq).shape, np.array(y_train_seq).shape)
+        print(np.array(X_test_seq).shape, np.array(y_test_seq).shape)
+        
         return np.array(X_train_seq), np.array(y_train_seq), np.array(X_test_seq), np.array(y_test_seq)
 
     def _shape_to_2D(self, X_train, X_test):
@@ -159,7 +163,7 @@ class CumulativeCustomerGrowth(PredictiveAnalysis):
         X_train, X_test, y_train, y_test, scaler_x, scaler_y = self.provide_data_to_perform(lag, rolling_mean)
 
         model = Sequential([
-            LSTM(num_units, input_shape=(X_train.shape[1], X_train.shape[2]), dropout=dropout, kernel_regularizer=l2(l2_reg)),
+            LSTM(num_units, input_shape=(X_train.shape[1], X_train.shape[2]), dropout=dropout),
             Dense(1)
         ])
 
