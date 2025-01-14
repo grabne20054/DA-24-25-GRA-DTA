@@ -1,4 +1,4 @@
-from preprocessing.APIDataHandler import APIDataHandler
+from DataAnalysis.preprocessing.APIDataHandler import APIDataHandler
 
 class APIDataHandlerFactory:
     """ Factory for creating APIDataHandler objects"""

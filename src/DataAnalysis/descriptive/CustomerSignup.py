@@ -1,5 +1,5 @@
-from descriptive.DescriptiveAnalysis import DescriptiveAnalysis
-from preprocessing.APIDataHandlerFactory import APIDataHandlerFactory
+from DataAnalysis.descriptive.DescriptiveAnalysis import DescriptiveAnalysis
+from DataAnalysis.preprocessing.APIDataHandlerFactory import APIDataHandlerFactory
 
 from datetime import datetime, timedelta
 from collections import defaultdict
