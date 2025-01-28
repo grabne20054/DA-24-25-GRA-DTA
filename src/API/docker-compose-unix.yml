@@ -1,0 +1,11 @@
+services:
+  dta-api:
+    build: ./
+    dockerfile: UnixDockerfile
+    command: |
+      uvicorn api.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
+    volumes:
+      - ../DataAnalysis:/usr/src/DataAnalysis/
+      - ../API:/usr/src/API/
+    ports:
+      - 8000:8000
