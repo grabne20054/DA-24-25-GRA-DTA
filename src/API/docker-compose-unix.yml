@@ -1,7 +1,8 @@
 services:
   dta-api:
-    build: ./
-    dockerfile: UnixDockerfile
+    build: 
+      context: ./
+      dockerfile: UnixDockerfile
     command: |
       uvicorn api.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
     volumes:
