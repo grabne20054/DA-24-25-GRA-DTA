@@ -11,9 +11,11 @@ WORKDIR /app
 
 COPY predictive/requirements.txt predictive/requirements.txt
 
+COPY . .
+
 # Install dependencies
 RUN pip install -r predictive/requirements.txt
 
 # Command to run the application
-#CMD ["python", "DataAnalysis/predictive/PredictiveEngine/ModelOptimizer/ModelOptimizer.py"]
+CMD ["python", "predictive/PredictiveEngine/ModelOptimizer/ModelOptimizer.py"]
 

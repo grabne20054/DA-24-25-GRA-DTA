@@ -1,4 +1,5 @@
-
+import os, sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 from predictive.PredictiveAnalysis import PredictiveAnalysis
 from descriptive.OrdersAmount import OrdersAmount
 from descriptive.CustomerSignup import CustomerSignup
@@ -19,9 +20,10 @@ from sklearn.pipeline import Pipeline
 import matplotlib.pyplot as plt
 import mlflow
 from mlflow.tracking import MlflowClient
+from mlflow.keras import log_model
 from math import isnan
 
-TF_ENABLE_ONEDNN_OPTS=0
+MODEL_DIR = '/models/'
 
 load_dotenv()
 
@@ -34,8 +36,8 @@ class GrowthModel(PredictiveAnalysis):
 
     def setup_mlflow(self):
         mlflow.set_tracking_uri(getenv('MLFLOWURL'))
-        if mlflow.set_experiment(self.data_analysis + 'Ex') is None:
-            mlflow.create_experiment(self.data_analysis + 'Ex')
+        if mlflow.set_experiment("DA-Ex") is None:
+            mlflow.create_experiment("DA-Ex")
         print('Successfully connected to MLFlow server')
     
     def collect(self):
@@ -50,6 +52,7 @@ class GrowthModel(PredictiveAnalysis):
         return X_train, X_test, y_train, y_test, scaler_x, scaler_y
 
     def _prepare_data(self, lag, rolling_mean):
+        # TODO lag -> min max differs more --> more lag
         data = self.collect()
 
         X = np.array([self._to_datetime_timestamp(key) for key in list(data[self.growthtype].keys())])
@@ -167,14 +170,14 @@ class GrowthModel(PredictiveAnalysis):
 
 
     def find_best_params(self):
-        X_train, X_test, y_train, y_test, scaler_X, scaler_y = self.collect()
+        X_train, X_test, y_train, y_test, scaler_X, scaler_y = self.provide_data_to_perform(20, 10)
 
         results = {}
-        for num_units in [80, 100, 128]:
-            for dropout in [0.1, 0.2, 0.3]:
-                for learning_rate in [1e-5, 1e-4, 1e-3]:
-                    for epoch in [1000]:
-                        for l2_reg in [1e-4]:
+        for num_units in [80, 100, 120]:
+            for dropout in [0.1, 0.2]:
+                for learning_rate in [1e-5, 1e-4]:
+                    for epoch in [500, 1000 ]:
+                        for l2_reg in [1e-4, 1e-3]:
 
                             print('Running with', num_units, 
                                 'LSTM cells, dropout =', dropout, 
@@ -188,6 +191,7 @@ class GrowthModel(PredictiveAnalysis):
                             model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse', metrics=[ 'mae'])
 
                             history = model.fit(X_train, y_train, epochs=epoch, batch_size=32,  validation_data=(X_test, y_test), verbose=1)
+                           
 
                 
                             num_epochs = len(history.history['val_loss'])
@@ -198,22 +202,23 @@ class GrowthModel(PredictiveAnalysis):
                             train_mae = history.history['mae'][best_epoch]
                             val_mae = history.history['val_mae'][best_epoch]
 
-                            results[(num_units, dropout, learning_rate, best_epoch, l2_reg)] = {'train_mse': train_mse, 
-                                                                                    'val_mse': val_mse, 'train_mae': train_mae, 'val_mae': val_mae}                                                                                          
+                            results[(num_units, dropout, learning_rate, best_epoch, l2_reg, model)] = {'train_mse': train_mse, 
+                                                                                    'val_mse': val_mse, 'train_mae': train_mae, 'val_mae': val_mae,}                                                                                          
                             print('Train MSE =', train_mse, ', Validation MSE =', val_mse, ', Train MAE =', train_mae, ', Validation MAE =', val_mae)        
                             print('+----------------------------------------------------------------------+')
 
         val_results = {key: results[key]['val_mse'] for key in results.keys()}
-        num_cells, dropout_rate, lr, num_epochs, l2_reg = min(val_results, key=val_results.get)
+        num_cells, dropout_rate, lr, num_epochs, l2_reg, model = min(val_results, key=val_results.get)
         print('Best parameters:', num_cells, 
                 'LSTM cells, training for', num_epochs, 
                 'epochs with dropout =', dropout_rate, 
                 'and learning rate =', lr
                 , 'and l2 reg=', l2_reg)
         
-        if not isnan(results[(num_cells, dropout_rate, lr, num_epochs, l2_reg)]['val_mse']):
         
-            self.save_best_params(self.data_analysis + str(datetime.now()), num_cells, dropout_rate, lr, num_epochs, l2_reg ,results[(num_cells, dropout_rate, lr, num_epochs, l2_reg)]['train_mse'], results[(num_cells, dropout_rate, lr, num_epochs, l2_reg)]['val_mse'], results[(num_cells, dropout_rate, lr, num_epochs, l2_reg)]['train_mae'], results[(num_cells, dropout_rate, lr, num_epochs, l2_reg)]['val_mae'])
+        if not isnan(results[(num_cells, dropout_rate, lr, num_epochs, l2_reg, model)]['val_mse']):
+        
+            self.save_best_model(self.data_analysis + str(datetime.now()), num_cells, dropout_rate, lr, num_epochs, l2_reg ,results[(num_cells, dropout_rate, lr, num_epochs, l2_reg, model)]['train_mse'], results[(num_cells, dropout_rate, lr, num_epochs, l2_reg, model)]['val_mse'], results[(num_cells, dropout_rate, lr, num_epochs, l2_reg, model)]['train_mae'], results[(num_cells, dropout_rate, lr, num_epochs, l2_reg, model)]['val_mae'], model, X_train[0])
         else:
             print('Invalid results. Skipping...')
         
@@ -222,13 +227,15 @@ class GrowthModel(PredictiveAnalysis):
 
         return num_epochs, best_epoch, learning_rate, dropout_rate
     
-    def save_best_params(self, run_name, num_units, dropout, learning_rate, epoch, l2_reg ,train_mse, val_mse, train_mae, val_mae):
+    def save_best_model(self, run_name, num_units, dropout, learning_rate, epoch, l2_reg ,train_mse, val_mse, train_mae, val_mae, model, input_example):
         mlflow.start_run(run_name=run_name)
         mlflow.log_param('num_units', num_units)
         mlflow.log_param('dropout', dropout)
         mlflow.log_param('learning_rate', learning_rate)
         mlflow.log_param('epoch', epoch)
         mlflow.log_param('l2_reg', l2_reg)
+
+        log_model(model, 'model', input_example=input_example)
 
 
         mlflow.log_metric('train_mse', train_mse)
@@ -239,33 +246,7 @@ class GrowthModel(PredictiveAnalysis):
         print('Run', run_name, 'saved successfully')
         print('+----------------------------------------------------------------------+')
 
-        #self.get_best_params()
-
-
-    def get_best_params(self):
-        client = MlflowClient()
-        experiment = client.get_experiment_by_name(self.data_analysis + 'Ex')
-
-        if experiment is None:
-            raise Exception('Experiment not found')
-        else: 
-            best_run = client.search_runs(
-            experiment_ids=[experiment.experiment_id],
-            filter_string="",
-            run_view_type=mlflow.entities.ViewType.ACTIVE_ONLY,
-            max_results=1,
-            order_by=["metrics.train_mse DESC", "metrics.train_mae DESC"]
-        )[0]
-            
-        best_run_params 
-            
-        best_run_params = best_run.data.params
-            
-        num_units = int(best_run_params['num_units'])
-        dropout = float(best_run_params['dropout'])
-        learning_rate = float(best_run_params['learning_rate'])
-        epoch = int(best_run_params['epoch'])
-        l2 = float(best_run_params['l2_reg'])
+        mlflow.end_run()
 
     def perform(self):
         while True:
@@ -273,3 +254,8 @@ class GrowthModel(PredictiveAnalysis):
 
     def report():
         pass
+
+
+if __name__ == "__main__":
+    customerGrowth = GrowthModel("CustomerGrowth", "growth", data_source=CustomerSignup())
+    customerGrowth.perform()

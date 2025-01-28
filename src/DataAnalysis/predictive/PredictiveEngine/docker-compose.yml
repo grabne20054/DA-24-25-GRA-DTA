@@ -1,29 +1,8 @@
 services:
-
-  # updates the volume with the latest host directory contents
-  init:
-    image: alpine:latest
-    container_name: volume_initializer
-    command: ["/bin/sh", "-c", "cp -r /app/* /shared-app"]
-    volumes:
-      - ../../:/app
-      - shared-volume:/shared-app
-    deploy:
-      replicas: 0
-
   model-optimizer:
     build:
       context: ../../
-      dockerfile: /predictive/PredictiveEngine/ModelOptimizer/Dockerfile
-    volumes:
-      - shared-volume:/app
-
-  data-predictor:
-    build:
-      context: ../../
-      dockerfile: /predictive/PredictiveEngine/DataPredictor/Dockerfile
-    volumes:
-      - shared-volume:/app
-
+      dockerfile: predictive/PredictiveEngine/ModelOptimizer/Dockerfile
+      
 volumes:
   shared-volume:
