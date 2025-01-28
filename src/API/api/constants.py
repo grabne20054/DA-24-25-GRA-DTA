@@ -1,4 +1,4 @@
-VERSION="v1"
+VERSION="api"
 DESCRIPTIVE="descriptive"
 DIAGNOSTIC="diagnostic"
 PREDICTIVE="predictive"

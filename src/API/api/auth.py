@@ -10,21 +10,17 @@ import secrets
 ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 30 minutes
 ALGORITHM = "HS256"
 router = APIRouter()
-if getenv("JWT_SECRET_KEY") is None:
-    secret = secrets.token_urlsafe(32)
-    environ["JWT_SECRET_KEY"] = secret
-    print(getenv("JWT_SECRET_KEY")) # not working properly (every time when reloading changing)
-
-
-
 
 @router.get(f"/{VERSION}/authenticate", status_code=200)
-async def authenticate(firstname: str, lastname:str, password: str):
-    return await crud.authenticate(firstname=firstname, lastname=lastname, password=password)
+async def authenticate(email:str, password: str):
+    return await crud.authenticate(email, password=password)
 
-def generate_jwt_token(firstname: str, lastname: str):
+def generate_jwt_token(email:str):
+    if getenv("JWT_SECRET_KEY") is None:
+        secret = secrets.token_urlsafe(32)
+        environ["JWT_SECRET_KEY"] = secret
     expires_delta = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    return jwt.encode({"firstname": firstname, "lastname": lastname, "exp": expires_delta}, getenv("JWT_SECRET_KEY"), algorithm=ALGORITHM)
+    return jwt.encode({"email":email, "exp": expires_delta}, getenv("JWT_SECRET_KEY"), algorithm=ALGORITHM)
 
 def decode_jwt_token(token: str, verify_expiration:bool):
     decoded_token = jwt.decode(token, getenv("JWT_SECRET_KEY"), algorithms=[ALGORITHM], options={"verify_exp": verify_expiration})
