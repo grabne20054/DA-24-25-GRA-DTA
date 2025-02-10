@@ -42,6 +42,9 @@ class EmployeeAmount(DescriptiveAnalysis):
 
         employees = Counter([i['role'] for i in data])
 
+        if employees == {}:
+            raise Exception("No Employees found")
+
         return {role: count for role, count in employees.items()}
 
 

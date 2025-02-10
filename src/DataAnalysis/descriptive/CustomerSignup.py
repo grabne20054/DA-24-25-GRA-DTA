@@ -56,17 +56,21 @@ class CustomerSignup(DescriptiveAnalysis):
             data.sort(key=lambda i: datetime.strptime(i['signedUp'], "%Y-%m-%dT%H:%M:%S.%f")) # Sort by signedUp date
         except AttributeError as e:
             print("Attribute Error: ", e)
-            return None
+            return e
+        
+        try:
 
-        if year:
-            return self._getYearlyGrowth(data)
-        
-        elif month:
-            return self._getMonthlyGrowth(data)
-        
-        else:
-            return self._getGrowthByDays(data, last_days)
-        
+            if year:
+                return self._getYearlyGrowth(data)
+            
+            elif month:
+                return self._getMonthlyGrowth(data)
+            
+            else:
+                return self._getGrowthByDays(data, last_days)
+            
+        except ValueError as e:
+            return e
 
     def report(self):
         pass
@@ -95,6 +99,12 @@ class CustomerSignup(DescriptiveAnalysis):
             
             cumulative_growth[year] = total
 
+        if len(yearlygrowth) == 0:
+            raise ValueError("No data found")
+        
+        if len(cumulative_growth) == 0:
+            raise ValueError("No data found")
+
         return {"growth": dict(yearlygrowth), "cumulative_growth": cumulative_growth}
     
     def _getMonthlyGrowth(self, data: list) -> dict:
@@ -119,6 +129,12 @@ class CustomerSignup(DescriptiveAnalysis):
                 total += 1
 
                 cumulative_growth[month] = total
+
+        if len(monthlygrowth) == 0:
+            raise ValueError("No data found")
+        
+        if len(cumulative_growth) == 0:
+            raise ValueError("No data found")
         
         return {"growth": dict(monthlygrowth), "cumulative_growth": cumulative_growth}
     
@@ -156,5 +172,11 @@ class CustomerSignup(DescriptiveAnalysis):
                 cumulative_growth[i['signedUp']] = total
             elif last_days < 0:
                 raise ValueError("The number of days should be greater than zero")
+            
+        if len(growth) == 0:
+            raise ValueError("No data found")
+        
+        if len(cumulative_growth) == 0:
+            raise ValueError("No data found")
         
         return {"growth": dict(growth), "cumulative_growth": cumulative_growth}
