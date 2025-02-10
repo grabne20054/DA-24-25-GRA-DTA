@@ -166,7 +166,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         seen = set()
         for i in data:
             if last_days > 0:
-                if datetime.strptime(self._getOrderDate(i['orderId']), "%Y-%m-%dT%H:%M:%S.%f") >= datetime.now() - timedelta(days=last_days):
+                if (datetime.strptime(self._getOrderDate(i['orderId']), "%Y-%m-%dT%H:%M:%S.%f") >= datetime.now() - timedelta(days=last_days)) and (datetime.strptime(self._getOrderDate(i['orderId']), "%Y-%m-%dT%H:%M:%S.%f") <= datetime.now()):
                     if i['productId'] not in seen:
                         products_bought[self._getProductNameById(i['productId'])] = i['productAmount']
                         seen.add(i['productId'])
