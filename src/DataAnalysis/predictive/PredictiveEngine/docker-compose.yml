@@ -1,8 +1,8 @@
 services:
   model-optimizer:
     build:
-      context: ../../
-      dockerfile: predictive/PredictiveEngine/ModelOptimizer/Dockerfile
+      context: ../../../
+      dockerfile: DataAnalysis/predictive/PredictiveEngine/ModelOptimizer/Dockerfile
       
 volumes:
   shared-volume:

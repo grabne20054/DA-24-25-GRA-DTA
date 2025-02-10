@@ -9,13 +9,13 @@ ENV PYTHONPATH=/app
 
 WORKDIR /app
 
-COPY predictive/requirements.txt predictive/requirements.txt
+COPY DataAnalysis/predictive/requirements.txt predictive/requirements.txt
 
 COPY . .
 
 # Install dependencies
-RUN pip install -r predictive/requirements.txt
+RUN pip install -r DataAnalysis/predictive/requirements.txt
 
 # Command to run the application
-CMD ["python", "predictive/PredictiveEngine/ModelOptimizer/ModelOptimizer.py"]
+CMD ["python", "DataAnalysis/predictive/PredictiveEngine/ModelOptimizer/ModelOptimizer.py"]
 

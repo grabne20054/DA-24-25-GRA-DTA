@@ -25,8 +25,7 @@ RUN set -eux \
     && pip install -r /usr/src/API/requirements.txt \
     && rm -rf /var/lib/apt/lists/* /root/.cache/pip
 
-# install TensorFlow
-RUN pip install tensorflow
+
 
 # copy project
 COPY . /usr/src/API/
