@@ -27,9 +27,9 @@ async def get_changing_price_orders_correlation(token: Annotated[str, Depends(is
     
 
 @router.get(f"/{VERSION}/{DIAGNOSTIC}/items-bought-correlation/", status_code=210)
-async def get_items_bought_correlation(token: Annotated[str, Depends(is_token_valid)], product_name: str, amount_combined_products: int):
+async def get_items_bought_correlation(productId: str, amount_combined_products: int):
     try:
-        data = await crud.get_items_bought_correlation(product_name, amount_combined_products)
+        data = await crud.get_items_bought_correlation(productId, amount_combined_products)
         return data
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
