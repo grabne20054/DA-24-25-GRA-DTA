@@ -52,7 +52,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
             raise Exception("No data found")
         
         if limit > len(data):
-            raise Exception("Limit is greater than the amount of products present")
+            raise Exception("Limit is greater than the amount of bought products present")
         
         if limit < 0:
             raise Exception("Limit cannot be negative")

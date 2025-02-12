@@ -48,8 +48,8 @@ class RoutesAmount(DescriptiveAnalysis):
         if limit < 0:
             raise Exception("Limit cannot be negative")
         
-        if limit > len(data):
-            raise Exception("Limit is greater than the amount of routes present")
+        if limit > self._getLenghtUniqueRoutesWithOrders(data):
+            raise Exception("Limit is greater than the amount of routes with orders are present")
         
         routes = {}
         seen = set()
@@ -99,3 +99,26 @@ class RoutesAmount(DescriptiveAnalysis):
                 return i['name']
         
         raise Exception("Route not found")
+    
+    def _getLenghtUniqueRoutesWithOrders(self, data: list) -> dict:
+        """
+        Gets the unique routes with orders
+
+        Args:
+            data (list): List of dictionaries containing the data
+
+        Returns:
+            int: Amount of unique routes with orders
+        """
+
+        seen = set()
+
+        for i in data:
+            uuid = i['routeId']
+            if uuid not in seen:
+                seen.add(uuid)
+            else:
+                continue
+
+        print(len(seen))
+        return len(seen)
