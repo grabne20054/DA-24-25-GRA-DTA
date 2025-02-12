@@ -28,21 +28,20 @@ async def get_employees_amount(token: Annotated[str, Depends(is_token_valid)]):
         return data
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
-    
-# TODO: LIMIT
+
 @router.get(f"/{VERSION}/{DESCRIPTIVE}/products-amount/", status_code=210)
-async def get_products_amount(token: Annotated[str, Depends(is_token_valid)]):
+async def get_products_amount(token: Annotated[str, Depends(is_token_valid) ], limit: int = 5):
     try:
-        data = await crud.get_products_amount()
+        data = await crud.get_products_amount(limit=limit)
         return data
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
     
-# TODO: orderDate, LIMIT
+# TODO: orderDate
 @router.get(f"/{VERSION}/{DESCRIPTIVE}/products-mostly-bought/", status_code=210)
-async def get_products_mostly_bought(token: Annotated[str, Depends(is_token_valid)], last_days: int = None, month: bool = False, year: bool = False):
+async def get_products_mostly_bought(token: Annotated[str, Depends(is_token_valid)], last_days: int = None, month: bool = False, year: bool = False, limit: int = 5):
     try:
-        data = await crud.get_products_mostly_bought(last_days=last_days, month=month, year=year)
+        data = await crud.get_products_mostly_bought(last_days=last_days, month=month, year=year, limit=limit)
         return data
     except Exception as e:
         if e == "No data found":
@@ -51,9 +50,9 @@ async def get_products_mostly_bought(token: Annotated[str, Depends(is_token_vali
             raise HTTPException(status_code=400, detail=str(e))
 
 @router.get(f"/{VERSION}/{DESCRIPTIVE}/routes-amount/", status_code=210)
-async def get_routes_amount(token: Annotated[str, Depends(is_token_valid)], n_amount: int = 5):
+async def get_routes_amount(token: Annotated[str, Depends(is_token_valid)], limit: int = 5):
     try:
-        data = await crud.get_routes_amount(n_amount=n_amount)
+        data = await crud.get_routes_amount(limit=limit)
         return data
     except Exception as e:        
         raise HTTPException(status_code=404, detail=str(e))

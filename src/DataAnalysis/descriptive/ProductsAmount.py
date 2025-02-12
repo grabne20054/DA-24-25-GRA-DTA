@@ -6,6 +6,8 @@ from os import getenv
 from dotenv import load_dotenv
 load_dotenv()
 
+TYPEOFGRAPH = "bar"
+
 class ProductsAmount(DescriptiveAnalysis):
     """ Amount of Products
     """
@@ -29,9 +31,17 @@ class ProductsAmount(DescriptiveAnalysis):
         except Exception as e:
             print("Error: ", e)
     
-    def perform(self) -> dict:
+    def perform(self, limit: int) -> dict:
         """
         Perform the analysis
+
+        Args:
+            limit (int): Limit of products to be shown
+        
+        Raises:
+            Exception: If no data is found
+            Exception: If the limit is greater than the amount of products present
+            Exception: If the limit is negative
 
         Returns:
             dict: Dictionary containing the products and the stock
@@ -40,12 +50,20 @@ class ProductsAmount(DescriptiveAnalysis):
         if data == None:
             raise Exception("No data found")
 
+        if limit > len(data):
+            raise Exception("Limit is greater than the amount of products present")
+
+        if limit < 0:
+            raise Exception("Limit cannot be negative")
+
         products = {}
 
         for i in data:    
             products[i['name']] = i['stock']
 
-        return products
+        products = dict(sorted(products.items(), key=lambda item: item[1], reverse=True)[:limit])
+
+        return { "products" : products, "typeofgraph" : TYPEOFGRAPH }
 
 
 

@@ -6,6 +6,8 @@ from os import getenv
 from dotenv import load_dotenv
 load_dotenv()
 
+TYPEOFGRAPH = "bar"
+
 class ProductsMostlyBought(DescriptiveAnalysis):
     """ Products Mostly Bought
     """
@@ -31,7 +33,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         except Exception as e:
             print("Error: ", e)
     
-    def perform(self, last_days: int = 0, year: bool = False, month: bool = False ) -> dict:
+    def perform(self, last_days: int = 0, year: bool = False, month: bool = False, limit: int = 5) -> dict:
         """
         Perform the analysis
         
@@ -40,6 +42,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
             last_days (int, optional): Number of days to consider. Defaults to 0.
             year (bool, optional): If True, returns the purchases of the current year. Defaults to False.
             month (bool, optional): If True, returns purchases of the current month. Defaults to False.
+            limit (int, optional): Limit of products to be shown. Defaults to 5.
 
         Returns:
             dict: Dictionary containing the products mostly bought
@@ -47,13 +50,19 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         data = self.collect()
         if data == None:
             raise Exception("No data found")
+        
+        if limit > len(data):
+            raise Exception("Limit is greater than the amount of products present")
+        
+        if limit < 0:
+            raise Exception("Limit cannot be negative")
 
         if year:
-            return self._getYearlyPurchases(data)
+            return self._getYearlyPurchases(data, limit)
         elif month:
-            return self._getMonthlyPurchases(data)
+            return self._getMonthlyPurchases(data, limit)
         else:
-            return self._getPurchasesByDays(data, last_days)
+            return self._getPurchasesByDays(data, last_days, limit)
 
 
     def _getProductNameById(self, product_id: int) -> str:
@@ -98,7 +107,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         
         raise Exception("Order not found")
 
-    def _getYearlyPurchases(self, data: list) -> dict:
+    def _getYearlyPurchases(self, data: list, limit) -> dict:
         """
         gets the yearly purchases of the products
         
@@ -122,9 +131,11 @@ class ProductsMostlyBought(DescriptiveAnalysis):
                 else:
                     products_bought[self._getProductNameById(i['productId'])] += i['productAmount']
 
-        return products_bought
+        products_bought = dict(list(sorted(products_bought.items(), key=lambda item: item[1], reverse=True))[:limit])
+
+        return {"products" : products_bought, "typeofgraph" : TYPEOFGRAPH}
     
-    def _getMonthlyPurchases(self, data: list) -> dict:
+    def _getMonthlyPurchases(self, data: list, limit) -> dict:
         """
         gets the monthly purchases of the products
 
@@ -145,9 +156,11 @@ class ProductsMostlyBought(DescriptiveAnalysis):
                 else:
                     products_bought[self._getProductNameById(i['productId'])] += i['productAmount']
 
-        return products_bought
+        products_bought = dict(list(sorted(products_bought.items(), key=lambda item: item[1], reverse=True))[:limit])
+
+        return {"products" : products_bought, "typeofgraph" : TYPEOFGRAPH}
     
-    def _getPurchasesByDays(self, data: list, last_days: int) -> dict:
+    def _getPurchasesByDays(self, data: list, last_days: int, limit) -> dict:
         """
         gets the purchases of the products by the number of days
 
@@ -180,8 +193,10 @@ class ProductsMostlyBought(DescriptiveAnalysis):
                     products_bought[self._getProductNameById(i['productId'])] += i['productAmount']
             elif last_days < 0:
                 raise ValueError("The number of days should be greater than zero")
+            
+        products_bought = dict(list(sorted(products_bought.items(), key=lambda item: item[1], reverse=True))[:limit])
 
-        return products_bought
+        return {"products" : products_bought, "typeofgraph" : TYPEOFGRAPH}
     
     def _getCurrentMonth(self) -> int:
         """

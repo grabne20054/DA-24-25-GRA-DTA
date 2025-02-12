@@ -8,6 +8,8 @@ from os import getenv
 from dotenv import load_dotenv
 load_dotenv()
 
+TYPEOFGRAPH = "line"
+
 
 class OrdersAmount(DescriptiveAnalysis):
     """ Trend of Orders Growth
@@ -95,7 +97,7 @@ class OrdersAmount(DescriptiveAnalysis):
             
             cumulative_growth[year] = total
 
-        return {"growth": dict(yearlygrowth), "cumulative_growth": cumulative_growth}
+        return {"growth": dict(yearlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
     
     def _getMonthlyGrowth(self, data: list) -> dict:
         """
@@ -120,7 +122,7 @@ class OrdersAmount(DescriptiveAnalysis):
 
                 cumulative_growth[month] = total
         
-        return {"growth": dict(monthlygrowth), "cumulative_growth": cumulative_growth}
+        return {"growth": dict(monthlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
     
     def _getGrowthByDays(self, data: list, last_days: int) -> dict:
         """
@@ -157,4 +159,4 @@ class OrdersAmount(DescriptiveAnalysis):
             elif last_days < 0:
                 raise ValueError("The number of days should be greater than zero")
         
-        return {"growth": dict(growth), "cumulative_growth": cumulative_growth}
+        return {"growth": dict(growth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}

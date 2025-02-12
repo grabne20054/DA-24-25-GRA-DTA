@@ -5,6 +5,8 @@ from os import getenv
 from dotenv import load_dotenv
 load_dotenv()
 
+TYPEOFGRAPH = "bar"
+
 class RoutesAmount(DescriptiveAnalysis):
     """ Amount of Routes
     """
@@ -29,7 +31,7 @@ class RoutesAmount(DescriptiveAnalysis):
         except Exception as e:
             print("Error: ", e)
     
-    def perform(self, n_amount: int) -> dict:
+    def perform(self, limit: int = 5) -> dict:
         """
         Perform the analysis
 
@@ -42,7 +44,13 @@ class RoutesAmount(DescriptiveAnalysis):
         data = self.collect()
         if data == None:
             raise Exception("No data found")
-
+        
+        if limit < 0:
+            raise Exception("Limit cannot be negative")
+        
+        if limit > len(data):
+            raise Exception("Limit is greater than the amount of routes present")
+        
         routes = {}
         seen = set()
 
@@ -56,8 +64,8 @@ class RoutesAmount(DescriptiveAnalysis):
 
         sorted_routes = dict(sorted(routes.items(), key=lambda item: item[1], reverse=True))
         
-        if n_amount > 0:
-            sorted_routes = dict(list(sorted_routes.items())[:n_amount])
+        if limit > 0:
+            sorted_routes = dict(list(sorted_routes.items())[:limit])
         else:
             sorted_routes = dict(list(sorted_routes.items()))
         
@@ -66,7 +74,7 @@ class RoutesAmount(DescriptiveAnalysis):
             route_name = self._getRouteNameById(i)
             sorted_routes_with_names[route_name] = sorted_routes[i]
             
-        return sorted_routes_with_names
+        return { "routes" : sorted_routes_with_names, "typeofgraph" : TYPEOFGRAPH }
 
     def report(self):
         pass

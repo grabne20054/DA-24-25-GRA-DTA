@@ -6,6 +6,8 @@ from os import getenv
 from dotenv import load_dotenv
 load_dotenv()
 
+TYPEOFGRAPH = "bar"
+
 class EmployeeAmount(DescriptiveAnalysis):
     """ Amount of Employees by Role
     """
@@ -45,7 +47,9 @@ class EmployeeAmount(DescriptiveAnalysis):
         if employees == {}:
             raise Exception("No Employees found")
 
-        return {role: count for role, count in employees.items()}
+        result = {role: count for role, count in employees.items()}
+        result["typeofgraph"] = TYPEOFGRAPH
+        return result
 
 
 

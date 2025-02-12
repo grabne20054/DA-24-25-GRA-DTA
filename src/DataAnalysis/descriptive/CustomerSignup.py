@@ -8,6 +8,8 @@ from os import getenv
 from dotenv import load_dotenv
 load_dotenv()
 
+TYPEOFGRAPH = "line"
+
 
 class CustomerSignup(DescriptiveAnalysis):
     """ Trend of Customer Growth
@@ -51,6 +53,9 @@ class CustomerSignup(DescriptiveAnalysis):
         data = self.collect()
         if data == None:
             raise Exception("No data found")
+        
+        if last_days < 0:
+            raise ValueError("The number of days should be greater than zero")
 
         try:
             data.sort(key=lambda i: datetime.strptime(i['signedUp'], "%Y-%m-%dT%H:%M:%S.%f")) # Sort by signedUp date
@@ -99,13 +104,7 @@ class CustomerSignup(DescriptiveAnalysis):
             
             cumulative_growth[year] = total
 
-        if len(yearlygrowth) == 0:
-            raise ValueError("No data found")
-        
-        if len(cumulative_growth) == 0:
-            raise ValueError("No data found")
-
-        return {"growth": dict(yearlygrowth), "cumulative_growth": cumulative_growth}
+        return {"growth": dict(yearlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
     
     def _getMonthlyGrowth(self, data: list) -> dict:
         """
@@ -129,14 +128,8 @@ class CustomerSignup(DescriptiveAnalysis):
                 total += 1
 
                 cumulative_growth[month] = total
-
-        if len(monthlygrowth) == 0:
-            raise ValueError("No data found")
         
-        if len(cumulative_growth) == 0:
-            raise ValueError("No data found")
-        
-        return {"growth": dict(monthlygrowth), "cumulative_growth": cumulative_growth}
+        return {"growth": dict(monthlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
     
     def _getGrowthByDays(self, data: list, last_days: int) -> dict:
         """
@@ -158,6 +151,7 @@ class CustomerSignup(DescriptiveAnalysis):
 
         cumulative_growth = {}
 
+        
         for i in data:
             i['signedUp'] = i['signedUp'].split("t")[0]
             if last_days > 0:
@@ -170,13 +164,5 @@ class CustomerSignup(DescriptiveAnalysis):
                 growth[i['signedUp']] += 1
                 total += 1
                 cumulative_growth[i['signedUp']] = total
-            elif last_days < 0:
-                raise ValueError("The number of days should be greater than zero")
-            
-        if len(growth) == 0:
-            raise ValueError("No data found")
         
-        if len(cumulative_growth) == 0:
-            raise ValueError("No data found")
-        
-        return {"growth": dict(growth), "cumulative_growth": cumulative_growth}
+        return {"growth": dict(growth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
