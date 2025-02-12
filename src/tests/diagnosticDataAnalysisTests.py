@@ -123,9 +123,10 @@ def test02_performProductOrdersCorrelation(monkeypatch):
     analysis = ProductOrdersCorrelation.ProductOrdersCorrelation()
     result = analysis.perform()
 
-    assert result == (1.0, 1.0, 1.0)
-    assert result[0] <= 1.0 and result[1] <= 1.0 and result[2] <= 1.0
-    assert result[0] >= -1.0 and result[1] >= -1.0 and result[2] >= -1.0
+    assert result == {'product-price-corr' : 1.0, 'product-orderDate-corr' : 1.0, 'product-businessSector-corr' : 1.0, "lower-bound": -1, "upper-bound": 1, "typeofgraph": "gauge"}
+    assert result["product-price-corr"] >= -1 and result["product-price-corr"] <= 1
+    assert result["product-orderDate-corr"] >= -1 and result["product-orderDate-corr"] <= 1
+    assert result["product-businessSector-corr"] >= -1 and result["product-businessSector-corr"] <= 1
 
 def test03_performItemBoughtCorrelationNoData(monkeypatch):
     '''
@@ -185,8 +186,18 @@ def test04_performItemBoughtCorrelation(monkeypatch):
             {
                 "orderId": 1,
                 "productId": 4,
-                "productAmount": 10
+                "productAmount": 10,
             },
+            {
+                "orderId": 1,
+                "productId": 2,
+                "productAmount": 10,
+            },
+            {
+                "orderId": 1,
+                "productId": 4,
+                "productAmount": 10,
+            }
 
 
         ],
@@ -218,31 +229,20 @@ def test04_performItemBoughtCorrelation(monkeypatch):
     def mock_collect(self):
         return pd.DataFrame(mock_data["orders"]), pd.DataFrame(mock_data["ordersProducts"]), pd.DataFrame(mock_data["products"])
     
-    def mock_productNamebyId(self, product_id):
-        if product_id == 1:
-            return "Product1"
-        elif product_id == 2:
-            return "Product2"
-        elif product_id == 3:
-            return "Product3"
-        elif product_id == 4:
-            return "Product4"
-    
     monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, 'collect', mock_collect)
-    monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, '_getProductNameById', mock_productNamebyId)
 
 
     analysis = ItemBoughtCorrelation.ItemBoughtCorrelation()
-    result = analysis.perform(product_name="Product1")
+    result = analysis.perform(1)
 
-    assert result == ["Product4", "Product3"]
+    assert result == {"products": [2, 4]}
 
 def test05_performItemBoughtCorrelation(monkeypatch):
     '''
     Test case to check the perform method of ItemBoughtCorrelation class
 
     Test05:
-    Data found, two products --> Not enough products to analyze (at least 3 products needed)
+    Data found, two products --> Not enough products to analyze (at least 2 products needed)
     '''
 
     mock_data = {
@@ -276,32 +276,21 @@ def test05_performItemBoughtCorrelation(monkeypatch):
                 "name": "Product1",
                 "price": 100,
             },
-            {
-                "productId": 2,
-                "name": "Product2",
-                "price": 200,
-            },
             ]
     }
 
     def mock_collect(self):
         return pd.DataFrame(mock_data["orders"]), pd.DataFrame(mock_data["ordersProducts"]), pd.DataFrame(mock_data["products"])
     
-    def mock_productNamebyId(self, product_id):
-        if product_id == 1:
-            return "Product1"
-        elif product_id == 2:
-            return "Product2"
     
     monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, 'collect', mock_collect)
-    monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, '_getProductNameById', mock_productNamebyId)
 
 
     with pytest.raises(Exception) as e:
         analysis = ItemBoughtCorrelation.ItemBoughtCorrelation()
-        analysis.perform("Product1")
+        analysis.perform(1)
 
-    assert str(e.value) == "Not enough products to analyze"
+    assert str(e.value) == "Too many products to combine"
 
 def test06_performItemBoughtCorrelation(monkeypatch):
     '''
@@ -362,23 +351,14 @@ def test06_performItemBoughtCorrelation(monkeypatch):
 
     def mock_collect(self):
         return pd.DataFrame(mock_data["orders"]), pd.DataFrame(mock_data["ordersProducts"]), pd.DataFrame(mock_data["products"])
-    
-    def mock_productNamebyId(self, product_id):
-        if product_id == 1:
-            return "Product1"
-        elif product_id == 2:
-            return "Product2"
-        elif product_id == 3:
-            return "Product3"
         
     monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, 'collect', mock_collect)
-    monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, '_getProductNameById', mock_productNamebyId)
 
 
     analysis = ItemBoughtCorrelation.ItemBoughtCorrelation()
-    result = analysis.perform(product_name="Product1", combination_product_amount=3)
+    result = analysis.perform(1)
 
-    assert result == ["Product3", "Product2"]
+    assert result == {"products": [2, 3]}
 
 def test07_performItemBoughtCorrelation(monkeypatch):
     '''
@@ -414,6 +394,11 @@ def test07_performItemBoughtCorrelation(monkeypatch):
             {
                 "orderId": 1,
                 "productId": 3,
+                "productAmount": 10,
+            },
+            {
+                "orderId": 1,
+                "productId": 4,
                 "productAmount": 10,
             },
             {
@@ -459,27 +444,14 @@ def test07_performItemBoughtCorrelation(monkeypatch):
 
     def mock_collect(self):
         return pd.DataFrame(mock_data["orders"]), pd.DataFrame(mock_data["ordersProducts"]), pd.DataFrame(mock_data["products"])
-    
-    def mock_productNamebyId(self, product_id):
-        if product_id == 1:
-            return "Product1"
-        elif product_id == 2:
-            return "Product2"
-        elif product_id == 3:
-            return "Product3"
-        elif product_id == 4:
-            return "Product4"
-        elif product_id == 5:
-            return "Product5"
         
     monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, 'collect', mock_collect)
-    monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, '_getProductNameById', mock_productNamebyId)
 
 
     analysis = ItemBoughtCorrelation.ItemBoughtCorrelation()
-    result = analysis.perform(product_name="Product1", combination_product_amount=3)
+    result = analysis.perform(1, combination_product_amount=3)
 
-    assert result == ["Product5", "Product4", "Product3"]
+    assert result == {"products": [4, 2, 3]}
 
 def test08_performItemBoughtCorrelation(monkeypatch):
     '''
@@ -527,6 +499,11 @@ def test08_performItemBoughtCorrelation(monkeypatch):
                 "productId": 5,
                 "productAmount": 10,
             },
+            {
+                "orderId": 1,
+                "productId": 4,
+                "productAmount": 10
+            }
         ],
         "products":
         [
@@ -560,67 +537,53 @@ def test08_performItemBoughtCorrelation(monkeypatch):
 
     def mock_collect(self):
         return pd.DataFrame(mock_data["orders"]), pd.DataFrame(mock_data["ordersProducts"]), pd.DataFrame(mock_data["products"])
-    
-    def mock_productNamebyId(self, product_id):
-        if product_id == 1:
-            return "Product1"
-        elif product_id == 2:
-            return "Product2"
-        elif product_id == 3:
-            return "Product3"
-        elif product_id == 4:
-            return "Product4"
-        elif product_id == 5:
-            return "Product5"
         
     monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, 'collect', mock_collect)
-    monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, '_getProductNameById', mock_productNamebyId)
 
 
     analysis = ItemBoughtCorrelation.ItemBoughtCorrelation()
-    result = analysis.perform(product_name="Product1", combination_product_amount=4)
+    result = analysis.perform(1, combination_product_amount=4)
 
-    assert result == ["Product5", "Product4", "Product3", "Product2"]
+    assert result == {"products": [4, 2, 3, 5]}
 
-def test09_getProductNameByIdItemBoughtCorrelation(monkeypatch):
+
+def test09_performItemBoughtCorrelationProductNotFound(monkeypatch):
     '''
-    Test case to check the _getProductNameById method of ItemBoughtCorrelation class
+    Test case to check the perform method of ItemBoughtCorrelation class
 
     Test09:
-    Product found
-    '''
-
-    mock_data = {
-        "products":
-        [
-            {
-                "productId": 1,
-                "name": "Product1",
-                "price": 100,
-            },
-           
-            ]
-    }
-
-    def mock_getProductNameById(self, product_id):
-        return "Product1"
-    
-    monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, '_getProductNameById', mock_getProductNameById)
-
-    analysis = ItemBoughtCorrelation.ItemBoughtCorrelation()
-    result = analysis._getProductNameById(1)
-
-    assert result == "Product1"
-
-def test10_getProductNameByIdItemBoughtCorrelation(monkeypatch):
-    '''
-    Test case to check the _getProductNameById method of ItemBoughtCorrelation class
-
-    Test10:
     Product not found
     '''
 
     mock_data = {
+        "orders":
+        [
+            {
+                "orderId": 1,
+                "orderDate": "2021-01-01",
+                "deliveryDate": "2021-01-02",
+                "customerReference": 1,	
+            }
+            ]
+        ,
+        "ordersProducts":
+        [
+            {
+                "orderId": 1,
+                "productId": 1,
+                "productAmount": 10,
+            },
+            {
+                "orderId": 1,
+                "productId": 2,
+                "productAmount": 10,
+            },
+            {
+                "orderId": 1,
+                "productId": 3,
+                "productAmount": 10,
+            },
+        ],
         "products":
         [
             {
@@ -628,17 +591,259 @@ def test10_getProductNameByIdItemBoughtCorrelation(monkeypatch):
                 "name": "Product1",
                 "price": 100,
             },
-           
+            {
+                "productId": 2,
+                "name": "Product2",
+                "price": 200,
+            },
+            {
+                "productId": 3,
+                "name": "Product3",
+                "price": 300,
+            },
             ]
     }
 
-    def mock_getProductNameById(self, product_id):
-        raise Exception("Product not found")
-    
-    monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, '_getProductNameById', mock_getProductNameById)
+    def mock_collect(self):
+        return pd.DataFrame(mock_data["orders"]), pd.DataFrame(mock_data["ordersProducts"]), pd.DataFrame(mock_data["products"])
+        
+    monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, 'collect', mock_collect)
 
     with pytest.raises(Exception) as e:
         analysis = ItemBoughtCorrelation.ItemBoughtCorrelation()
-        analysis._getProductNameById(2)
+        analysis.perform(4)
 
     assert str(e.value) == "Product not found"
+
+def test10_performItemBoughtCorrelationProductsToCombineNegative(monkeypatch):
+    '''
+    Test case to check the perform method of ItemBoughtCorrelation class
+    
+    Test10:
+    combination_product_amount < 1
+    '''
+
+    mock_data = {
+        "orders":
+        [
+            {
+                "orderId": 1,
+                "orderDate": "2021-01-01",
+                "deliveryDate": "2021-01-02",
+                "customerReference": 1,	
+            }
+            ]
+        ,
+        "ordersProducts":
+        [
+            {
+                "orderId": 1,
+                "productId": 1,
+                "productAmount": 10,
+            },
+            {
+                "orderId": 1,
+                "productId": 2,
+                "productAmount": 10,
+            },
+            {
+                "orderId": 1,
+                "productId": 3,
+                "productAmount": 10,
+            },
+        ],
+        "products":
+        [
+            {
+                "productId": 1,
+                "name": "Product1",
+                "price": 100,
+            },
+            {
+                "productId": 2,
+                "name": "Product2",
+                "price": 200,
+            },
+            {
+                "productId": 3,
+                "name": "Product3",
+                "price": 300,
+            },
+            ]
+    }
+
+    def mock_collect(self):
+        return pd.DataFrame(mock_data["orders"]), pd.DataFrame(mock_data["ordersProducts"]), pd.DataFrame(mock_data["products"])
+    
+    monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, 'collect', mock_collect)
+
+    with pytest.raises(ValueError) as e:
+        analysis = ItemBoughtCorrelation.ItemBoughtCorrelation()
+        analysis.perform(1, combination_product_amount=-1)
+
+    assert str(e.value) == "Not enough products to combine"
+
+def test11_performItemBoughtCorrelationEmptyDataframes(monkeypatch):
+    '''
+    Test case to check the perform method of ItemBoughtCorrelation class
+
+    Test11:
+    Empty dataframes
+    '''
+
+    mock_data = {
+        "orders": [],
+        "ordersProducts": [],
+        "products": []
+    }
+
+    def mock_collect(self):
+        return pd.DataFrame(mock_data["orders"]), pd.DataFrame(mock_data["ordersProducts"]), pd.DataFrame(mock_data["products"])
+    
+    monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, 'collect', mock_collect)
+
+    with pytest.raises(Exception) as e:
+        analysis = ItemBoughtCorrelation.ItemBoughtCorrelation()
+        analysis.perform(1)
+
+    assert str(e.value) == "One or more dataframes are empty"
+
+def test12_performItemBoughtCorrelationErrorInMergingDataframes(monkeypatch):
+    '''
+    Test case to check the perform method of ItemBoughtCorrelation class
+    
+    Test12:
+    Error in merging dataframes
+    '''
+
+    mock_data = {
+        "orders":
+        [
+            {
+                "orderId": 1,
+                "orderDate": "2021-01-01",
+                "deliveryDate": "2021-01-02",
+                "customerReference": 1,	
+            }
+            ]
+        ,
+        "ordersProducts":
+        [
+            {
+                "orderId": 1,
+                "productId": 1,
+                "productAmount": 10,
+            },
+            {
+                "orderId": 1,
+                "productId": 2,
+                "productAmount": 10,
+            },
+            {
+                "orderId": 1,
+                "productId": 3,
+                "productAmount": 10,
+            },
+        ],
+        "products":
+        [
+            {
+                "productId": 1,
+                "name": "Product1",
+                "price": 100,
+            },
+            {
+                "productId": 2,
+                "name": "Product2",
+                "price": 200,
+            },
+            {
+                "productId": 3,
+                "name": "Product3",
+                "price": 300,
+            },
+            ]
+    }
+
+    def mock_collect(self):
+        return pd.DataFrame(mock_data["orders"]), pd.DataFrame(mock_data["ordersProducts"]), pd.DataFrame(mock_data["products"])
+    
+    def mock_merge(self, df_orders, df_ordersProducts, df_products):
+        raise Exception("Error in merging dataframes")
+    
+    monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, 'collect', mock_collect)
+    monkeypatch.setattr(pd, 'merge', mock_merge)
+
+    with pytest.raises(Exception) as e:
+        analysis = ItemBoughtCorrelation.ItemBoughtCorrelation()
+        analysis.perform(1)
+
+    assert str(e.value) == "Error in merging dataframes"
+
+def test13_performItemBoughtCorrelationTooManyProductsToCombine(monkeypatch):
+    '''
+    Test case to check the perform method of ItemBoughtCorrelation class
+
+    Test13:
+    Too many products to combine
+    '''
+
+    mock_data = {
+        "orders":
+        [
+            {
+                "orderId": 1,
+                "orderDate": "2021-01-01",
+                "deliveryDate": "2021-01-02",
+                "customerReference": 1,	
+            }
+            ]
+        ,
+        "ordersProducts":
+        [
+            {
+                "orderId": 1,
+                "productId": 1,
+                "productAmount": 10,
+            },
+            {
+                "orderId": 1,
+                "productId": 2,
+                "productAmount": 10,
+            },
+            {
+                "orderId": 1,
+                "productId": 3,
+                "productAmount": 10,
+            },
+        ],
+        "products":
+        [
+            {
+                "productId": 1,
+                "name": "Product1",
+                "price": 100,
+            },
+            {
+                "productId": 2,
+                "name": "Product2",
+                "price": 200,
+            },
+            {
+                "productId": 3,
+                "name": "Product3",
+                "price": 300,
+            },
+            ]
+    }
+
+    def mock_collect(self):
+        return pd.DataFrame(mock_data["orders"]), pd.DataFrame(mock_data["ordersProducts"]), pd.DataFrame(mock_data["products"])
+    
+    monkeypatch.setattr(ItemBoughtCorrelation.ItemBoughtCorrelation, 'collect', mock_collect)
+
+    with pytest.raises(ValueError) as e:
+        analysis = ItemBoughtCorrelation.ItemBoughtCorrelation()
+        analysis.perform(1, combination_product_amount=4)
+
+    assert str(e.value) == "Too many products to combine"
