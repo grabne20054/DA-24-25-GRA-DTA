@@ -15,6 +15,8 @@ from datetime import datetime, timedelta
 load_dotenv()
 
 
+####################### DESCRIPTIVE #######################
+
 async def get_customers_signup(last_days: int = 0, month: bool = False, year: bool = False):
     return CustomerSignup.CustomerSignup().perform(last_days=last_days, month=month, year=year)
 
@@ -30,6 +32,9 @@ async def get_products_mostly_bought(last_days: int = 0, month: bool = False, ye
 async def get_routes_amount(limit: int = 5):
     return RoutesAmount.RoutesAmount().perform(limit=limit)
 
+
+####################### DIAGNOSTIC #######################
+
 async def get_products_orders_correlation():
     if ProductOrdersCorrelation.ProductOrdersCorrelation().perform() is None:
         pass
@@ -41,38 +46,85 @@ async def get_changing_price_orders_correlation(price_percentage: float = 0.1, n
 async def get_items_bought_correlation(productId: str, amount_combined_products: int):
     return ItemBoughtCorrelation.ItemBoughtCorrelation().perform(productId=productId, combination_product_amount=amount_combined_products)
 
-async def get_customers_growth(last_days: int = None, month: bool = False, year: bool = False):
-    if year is True:
-        X_data = datetime.now().year
+
+####################### PREDICTIVE #######################
+
+async def get_customers_growth(one_day: bool = False, seven_days: bool = False, month: bool = False, year: bool = False):
+    option = None
+    if one_day is True:
+        X_data = {datetime.now() + timedelta(days=1): 0}
+        option = "one_day"
+    elif seven_days is True:
+        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(1,8)}
+        option = "seven_days"
     elif month is True:
-        X_data = [i for i in range(1, 13)]
-    elif last_days is not None:
-        X_data = [datetime.now() - timedelta(days=i) for i in range(last_days)]
-        print(X_data)
+        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(30)}
+        option = "month"
+    elif year is True:
+        X_data = [datetime.now().year]
+        option = "year"
     else: 
         raise HTTPException(status_code=400, detail="Invalid parameters")
    
-    return DataPredictor.DataPredictor("CustomerGrowth").predict(X_data, "CustomerGrowth")
+    return DataPredictor.DataPredictor("CustomerGrowth").predict(X_data, "CustomerGrowth", option)
 
 
-async def get_cumulative_customers_growth(last_days: int = None, month: bool = False, year: bool = False):
-    if year is True:
-        X_data = datetime.now().year
+async def get_cumulative_customers_growth(one_day: bool = False, seven_days: bool = False, month: bool = False, year: bool = False):
+    option = None
+    if one_day is True:
+        X_data = {datetime.now() + timedelta(days=1): 0}
+        option = "one_day"
+    elif seven_days is True:
+        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(1,8)}
+        option = "seven_days"
     elif month is True:
-        X_data = [i for i in range(1, 13)]
-    elif last_days is not None:
-        X_data = [datetime.now() - timedelta(days=i) for i in range(last_days)]
-        print(X_data)
+        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(30)}
+        option = "month"
+    elif year is True:
+        X_data = [datetime.now().year]
+        option = "year"
     else: 
         raise HTTPException(status_code=400, detail="Invalid parameters")
    
-    return DataPredictor.DataPredictor("CumulativeCustomerGrowth").predict(X_data, "CumulativeCustomerGrowth")
+    return DataPredictor.DataPredictor("CumulativeCustomerGrowth").predict(X_data, "CumulativeCustomerGrowth", option)
 
-async def get_orders_growth():
-    raise HTTPException(status_code=501, detail="Not implemented")
+async def get_orders_growth(one_day: bool = False, seven_days: bool = False, month: bool = False, year: bool = False):
+    option = None
+    if one_day is True:
+        X_data = {datetime.now() + timedelta(days=1): 0}
+        option = "one_day"
+    elif seven_days is True:
+        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(1,8)}
+        option = "seven_days"
+    elif month is True:
+        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(30)}
+        option = "month"
+    elif year is True:
+        X_data = [datetime.now().year]
+        option = "year"
+    else: 
+        raise HTTPException(status_code=400, detail="Invalid parameters")
+   
+    return DataPredictor.DataPredictor("OrdersGrowth").predict(X_data, "OrdersGrowth", option)
 
-async def get_cumulative_orders_growth():
-    raise HTTPException(status_code=501, detail="Not implemented")
+async def get_cumulative_orders_growth(one_day: bool = False, seven_days: bool = False, month: bool = False, year: bool = False):
+    option = None
+    if one_day is True:
+        X_data = {datetime.now() + timedelta(days=1): 0}
+        option = "one_day"
+    elif seven_days is True:
+        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(1,8)}
+        option = "seven_days"
+    elif month is True:
+        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(30)}
+        option = "month"
+    elif year is True:
+        X_data = [datetime.now().year]
+        option = "year"
+    else: 
+        raise HTTPException(status_code=400, detail="Invalid parameters")
+   
+    return DataPredictor.DataPredictor("CumulativeOrdersGrowth").predict(X_data, "CumulativeOrdersGrowth", option)
 
 async def authenticate(email:str, password: str):
     response = requests.get(f"{getenv('APIURL')}/employees?email={email}&password={password}")
