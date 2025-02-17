@@ -19,7 +19,8 @@ class DataPredictor:
 
     def __init__(self, data_analysis:str):
         self.model = None
-        self.scaler = None
+        self.scaler_y = None
+        self.scaler_X = None
         self.data_analysis = data_analysis
 
     def _get_best_model_id(self, data_analysis:str, option:str) -> str:
@@ -61,19 +62,20 @@ class DataPredictor:
         except Exception as e:
             raise e
 
-    def _getScalerOfModel(self, run_id: str):
+    def _getScalerOfModel(self, run_id: str, artifact_path: str = "model/scaler.pkl") -> None:
         try:
-            scaler_local = mlflow.artifacts.download_artifacts(run_id=run_id, artifact_path="model/scaler.pkl")
+            scaler_local = mlflow.artifacts.download_artifacts(run_id=run_id, artifact_path=artifact_path)
 
             if not os.path.exists(scaler_local):
                 raise FileNotFoundError(f"Scaler file not found at {scaler_local}")
 
-            artifacts = mlflow.artifacts.list_artifacts(run_id=run_id, artifact_path="model")
-
             with open(scaler_local, "rb") as f:
                 scaler = pickle.load(f)
 
-            self.scaler = scaler
+            if artifact_path == "model/scaler_y.pkl":
+                self.scaler_y = scaler
+            elif artifact_path == "model/scaler_X.pkl":
+                self.scaler_X = scaler
 
         except Exception as e:
             raise Exception(f"Failed to retrieve scaler: {e}")
@@ -84,18 +86,20 @@ class DataPredictor:
         best_model_id, artifact_uri = self._get_best_model_id(data_analysis, option)
         model_url = f"{artifact_uri}/model"
         self.model = load_model(model_url)
-        self._getScalerOfModel(best_model_id)
+        self._getScalerOfModel(best_model_id, "model/scaler_y.pkl")
+        self._getScalerOfModel(best_model_id, "model/scaler_X.pkl")
 
     def _to_datetime_timestamp(self, date: datetime):
         return date.timestamp()
-        
-
+    
     def predict(self, X_pred, data_analysis:str, option:str):
         self.loadBestModel(data_analysis, option)
         if self.model is None:
             raise Exception("Model not loaded")
-        if self.scaler is None:
-            raise Exception("Scaler not loaded")
+        if self.scaler_X is None:
+            raise Exception("Scaler X not loaded")
+        if self.scaler_y is None:
+            raise Exception("Scaler y not loaded")
 
         if data_analysis == "CumulativeCustomerGrowth":
             growth = GrowthModel("CumulativeCustomerGrowth", "cumulative_growth", data_source=CustomerSignup())
@@ -116,7 +120,7 @@ class DataPredictor:
         
         try:
 
-            pred = growth.predict(X_test, X_pred ,self.model, self.scaler, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], OPTIONS[option]["sequence_lenght"])
+            pred = growth.predict(X_test, X_pred ,self.model, self.scaler_y, self.scaler_X, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], OPTIONS[option]["sequence_lenght"])
         
         except Exception as e:
             raise Exception(f"Failed to predict: {e}")

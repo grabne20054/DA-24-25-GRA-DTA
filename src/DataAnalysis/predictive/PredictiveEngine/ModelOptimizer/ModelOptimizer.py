@@ -7,7 +7,7 @@ from DataAnalysis.descriptive.OrdersAmount import OrdersAmount
 from threading import Thread
 import time
 
-OPTIONS = {"one_day": {"lag" : 1, "sequence_lenght" : 30, "rolling_mean" : 30 }, "seven_days": {"lag" : 7, "sequence_lenght" : 60, "rolling_mean" : 30 }, "month": {"lag" : 30, "sequence_lenght" : 90, "rolling_mean" : 30 }, "year": {"lag" : 365, "sequence_lenght" : 365, "rolling_mean" : 90 }}
+OPTIONS = {"one_day": {"lag" : 7, "sequence_lenght" : 30, "rolling_mean" : 30 }, "seven_days": {"lag" : 7, "sequence_lenght" : 30, "rolling_mean" : 30 }, "month": {"lag" : 1, "sequence_lenght" : 3, "rolling_mean" : 3 }, "year": {"lag" : 1, "sequence_lenght" : 2, "rolling_mean" : 1 }}
 
 class ModelOptimizer:
     def __init__(self):
@@ -19,10 +19,23 @@ class ModelOptimizer:
     def spawn_optimizer(self):
         for option_key in OPTIONS.keys():
             for model in [self.customerGrowth, self.cumulativeCustomerGrowth, self.ordersGrowth, self.cumulativeOrdersGrowth]:
-                t = Thread(target=model.perform, args=(OPTIONS[option_key]["lag"], OPTIONS[option_key]["rolling_mean"], OPTIONS[option_key]["sequence_lenght"]))
-                t.start()
+                if option_key == "one_day" or option_key == "seven_days":
+                    t = Thread(target=model.perform, args=(OPTIONS[option_key]["lag"], OPTIONS[option_key]["rolling_mean"], OPTIONS[option_key]["sequence_lenght"]))
+                    t.start()
+                    print("Spawned thread for ", model, " with option ", option_key)
+                elif option_key == "month":
+                    t = Thread(target=model.perform, args=(OPTIONS[option_key]["lag"], OPTIONS[option_key]["rolling_mean"], OPTIONS[option_key]["sequence_lenght"], True))
+                    t.start()
+                    print("Spawned thread for ", model, " with option ", option_key)
+                elif option_key == "year":
+                    t = Thread(target=model.perform, args=(OPTIONS[option_key]["lag"], OPTIONS[option_key]["rolling_mean"], OPTIONS[option_key]["sequence_lenght"], False, True))
+                    t.start()
+                    print("Spawned thread for ", model, " with option ", option_key)
 
 if __name__ == "__main__":
     while True:
-        ModelOptimizer().spawn_optimizer()
-        time.sleep(60*60*24)
+        try:
+            ModelOptimizer().spawn_optimizer()
+            time.sleep(60*60*24)
+        except Exception as e:
+            print(f"Error occured: {e}")
