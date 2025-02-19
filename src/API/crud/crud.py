@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 
-from DataAnalysis.descriptive import CustomerSignup, EmployeeAmount, ProductsAmount, ProductsMostlyBought, RoutesAmount
+from DataAnalysis.descriptive import CustomerSignup, EmployeeAmount, ProductsAmount, ProductsMostlyBought, RoutesAmount, OrdersAmount
 
 from DataAnalysis.diagnostic import ProductOrdersCorrelation, ItemBoughtCorrelation
 
@@ -17,8 +17,11 @@ load_dotenv()
 
 ####################### DESCRIPTIVE #######################
 
-async def get_customers_signup(last_days: int = 0, month: bool = False, year: bool = False):
-    return CustomerSignup.CustomerSignup().perform(last_days=last_days, month=month, year=year)
+async def get_customers_signup(last_days: int = 0, month: bool = False, year: bool = False, showzeros: bool = False):
+    return CustomerSignup.CustomerSignup().perform(last_days=last_days, month=month, year=year, showzeros=showzeros)
+
+async def get_orders_amount(last_days: int = 0, month: bool = False, year: bool = False, showzeros: bool = False):
+    return OrdersAmount.OrdersAmount().perform(last_days=last_days, month=month, year=year, showzeros=showzeros)
 
 async def get_employees_amount():
     return EmployeeAmount.EmployeeAmount().perform()
@@ -50,81 +53,77 @@ async def get_items_bought_correlation(productId: str, amount_combined_products:
 ####################### PREDICTIVE #######################
 
 async def get_customers_growth(one_day: bool = False, seven_days: bool = False, month: bool = False, year: bool = False):
-    option = None
-    if one_day is True:
-        X_data = {datetime.now() + timedelta(days=1): 0}
-        option = "one_day"
-    elif seven_days is True:
-        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(1,8)}
-        option = "seven_days"
-    elif month is True:
-        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(30)}
-        option = "month"
-    elif year is True:
-        X_data = [datetime.now().year]
-        option = "year"
-    else: 
-        raise HTTPException(status_code=400, detail="Invalid parameters")
-   
-    return DataPredictor.DataPredictor("CustomerGrowth").predict(X_data, "CustomerGrowth", option)
+    try:
+        option = None
+        if one_day is True:
+            option = "one_day"
+        elif seven_days is True:
+            option = "seven_days"
+        elif month is True:
+            option = "month"
+        elif year is True:
+            option = "year"
+        else: 
+            raise HTTPException(status_code=400, detail="Invalid parameters")
+    
+        return DataPredictor.DataPredictor("CustomerGrowth").predict("CustomerGrowth", option)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 async def get_cumulative_customers_growth(one_day: bool = False, seven_days: bool = False, month: bool = False, year: bool = False):
-    option = None
-    if one_day is True:
-        X_data = {datetime.now() + timedelta(days=1): 0}
-        option = "one_day"
-    elif seven_days is True:
-        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(1,8)}
-        option = "seven_days"
-    elif month is True:
-        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(30)}
-        option = "month"
-    elif year is True:
-        X_data = [datetime.now().year]
-        option = "year"
-    else: 
-        raise HTTPException(status_code=400, detail="Invalid parameters")
-   
-    return DataPredictor.DataPredictor("CumulativeCustomerGrowth").predict(X_data, "CumulativeCustomerGrowth", option)
+    try:
+        option = None
+        if one_day is True:
+            option = "one_day"
+        elif seven_days is True:
+            option = "seven_days"
+        elif month is True:
+            option = "month"
+        elif year is True:
+            option = "year"
+        else: 
+            raise HTTPException(status_code=400, detail="Invalid parameters")
+    
+        return DataPredictor.DataPredictor("CumulativeCustomerGrowth").predict("CumulativeCustomerGrowth", option)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 async def get_orders_growth(one_day: bool = False, seven_days: bool = False, month: bool = False, year: bool = False):
-    option = None
-    if one_day is True:
-        X_data = {datetime.now() + timedelta(days=1): 0}
-        option = "one_day"
-    elif seven_days is True:
-        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(1,8)}
-        option = "seven_days"
-    elif month is True:
-        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(30)}
-        option = "month"
-    elif year is True:
-        X_data = [datetime.now().year]
-        option = "year"
-    else: 
-        raise HTTPException(status_code=400, detail="Invalid parameters")
-   
-    return DataPredictor.DataPredictor("OrdersGrowth").predict(X_data, "OrdersGrowth", option)
+    try:
+        option = None
+        if one_day is True:
+            option = "one_day"
+        elif seven_days is True:
+            option = "seven_days"
+        elif month is True:
+            option = "month"
+        elif year is True:
+            option = "year"
+        else: 
+            raise HTTPException(status_code=400, detail="Invalid parameters")
+    
+        return DataPredictor.DataPredictor("OrdersGrowth").predict("OrdersGrowth", option)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 async def get_cumulative_orders_growth(one_day: bool = False, seven_days: bool = False, month: bool = False, year: bool = False):
-    option = None
-    if one_day is True:
-        X_data = {datetime.now() + timedelta(days=1): 0}
-        option = "one_day"
-    elif seven_days is True:
-        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(1,8)}
-        option = "seven_days"
-    elif month is True:
-        X_data = {datetime.now() + timedelta(days=i): 0 for i in range(30)}
-        option = "month"
-    elif year is True:
-        X_data = [datetime.now().year]
-        option = "year"
-    else: 
-        raise HTTPException(status_code=400, detail="Invalid parameters")
-   
-    return DataPredictor.DataPredictor("CumulativeOrdersGrowth").predict(X_data, "CumulativeOrdersGrowth", option)
+    try:
+        option = None
+        if one_day is True:
+            option = "one_day"
+        elif seven_days is True:
+            option = "seven_days"
+        elif month is True:
+            option = "month"
+        elif year is True:
+            option = "year"
+        else: 
+            raise HTTPException(status_code=400, detail="Invalid parameters")
+    
+        return DataPredictor.DataPredictor("CumulativeOrdersGrowth").predict("CumulativeOrdersGrowth", option)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 async def authenticate(email:str, password: str):
     response = requests.get(f"{getenv('APIURL')}/employees?email={email}&password={password}")

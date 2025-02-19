@@ -3,6 +3,7 @@ from DataAnalysis.preprocessing.APIDataHandlerFactory import APIDataHandlerFacto
 
 from datetime import datetime, timedelta
 from collections import defaultdict
+import pandas as pd
 from os import getenv
 
 from dotenv import load_dotenv
@@ -34,7 +35,7 @@ class OrdersAmount(DescriptiveAnalysis):
         except Exception as e:
             print("Error: ", e)
         
-    def perform(self, last_days: int = 0, year: bool = False, month: bool = False) -> dict:
+    def perform(self, last_days: int = 0, year: bool = False, month: bool = False, showzeros: bool = False) -> dict:
         """
         Perform the analysis
 
@@ -42,6 +43,7 @@ class OrdersAmount(DescriptiveAnalysis):
             last_days (int, optional): Number of days to consider. Defaults to 0.
             year (bool, optional): If True, returns the yearly growth. Defaults to False.
             month (bool, optional): If True, returns the monthly growth. Defaults to False.
+            showzeros (bool, optional): If True, shows the days with zero growth. Defaults to False.
 
         Returns:
             dict: Dictionary containing growth as dictionary and cumulative growth data as dictionary#
@@ -61,25 +63,26 @@ class OrdersAmount(DescriptiveAnalysis):
             return None
 
         if year:
-            return self._getYearlyGrowth(data)
+            return self._getYearlyGrowth(data, showzeros)
         
         elif month:
-            return self._getMonthlyGrowth(data)
+            return self._getMonthlyGrowth(data, showzeros)
         
         else:
-            return self._getGrowthByDays(data, last_days)
+            return self._getGrowthByDays(data, last_days, showzeros)
         
 
     def report(self):
         pass
 
-    def _getYearlyGrowth(self, data: list) -> dict:
+    def _getYearlyGrowth(self, data: list, showzeros: bool = False) -> dict:
         """
         gets the yearly growth of the orders
         
         
         Args:
             data (list): List of dictionaries containing the data
+            showzeros (bool) : If True, shows the years with zero growth
             
         Returns:
             dict: Dictionary containing the growth and cumulative growth data
@@ -97,14 +100,33 @@ class OrdersAmount(DescriptiveAnalysis):
             
             cumulative_growth[year] = total
 
+        if showzeros:
+            df_growth = pd.DataFrame.from_dict(yearlygrowth, orient='index', columns=['growth'])
+            df_cumulative_growth = pd.DataFrame.from_dict(cumulative_growth, orient='index', columns=['cumulative_growth'])
+                
+            full_date_range = pd.date_range(start=df_growth.index.min(), end=df_growth.index.max(), freq='ME')
+            year_index = full_date_range.strftime("%Y")
+            
+            df_growth_filled = df_growth.reindex(year_index, fill_value=0)
+            df_growth_filled.index = df_growth_filled.index
+            df_growth_filled.update(df_growth)
+            
+            df_cumulative_growth_filled = df_cumulative_growth.reindex(year_index, fill_value=0)
+            df_cumulative_growth_filled.index = df_cumulative_growth_filled.index
+            df_cumulative_growth_filled.update(df_cumulative_growth)
+
+            yearlygrowth = df_growth_filled.to_dict()['growth']
+            cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
+
         return {"growth": dict(yearlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
     
-    def _getMonthlyGrowth(self, data: list) -> dict:
+    def _getMonthlyGrowth(self, data: list, showzeros: bool = False) -> dict:
         """
         gets the monthly growth of the orders
 
         Args:
             data (list): List of dictionaries containing the data
+            showzeros (bool) : If True, shows the months with zero growth
         
         Returns:
             dict: Dictionary containing the growth and cumulative growth data
@@ -121,16 +143,35 @@ class OrdersAmount(DescriptiveAnalysis):
                 total += 1
 
                 cumulative_growth[month] = total
+
+        if showzeros:
+            df_growth = pd.DataFrame.from_dict(monthlygrowth, orient='index', columns=['growth'])
+            df_cumulative_growth = pd.DataFrame.from_dict(cumulative_growth, orient='index', columns=['cumulative_growth'])
+                
+            full_date_range = pd.date_range(start=f"{datetime.now().year}-01-01", end=f"{datetime.now().year}-12-31", freq='ME')
+            month_index = full_date_range.strftime("%m")
+            
+            df_growth_filled = df_growth.reindex(month_index, fill_value=0)
+            df_growth_filled.index = df_growth_filled.index
+            df_growth_filled.update(df_growth)
+            
+            df_cumulative_growth_filled = df_cumulative_growth.reindex(month_index, fill_value=0)
+            df_cumulative_growth_filled.index = df_cumulative_growth_filled.index
+            df_cumulative_growth_filled.update(df_cumulative_growth)
+
+            monthlygrowth = df_growth_filled.to_dict()['growth']
+            cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
         
         return {"growth": dict(monthlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
     
-    def _getGrowthByDays(self, data: list, last_days: int) -> dict:
+    def _getGrowthByDays(self, data: list, last_days: int, showzeros: bool = False) -> dict:
         """
         gets the growth of the orders by the number of days
 
         Args:
             data (list): List of dictionaries containing the data
             last_days (int): Number of days to consider
+            showzeros (bool) : If True, shows the days with zero growth
 
         Returns:
             dict: Dictionary containing the growth and cumulative growth data
@@ -158,5 +199,25 @@ class OrdersAmount(DescriptiveAnalysis):
                 cumulative_growth[i['orderDate']] = total
             elif last_days < 0:
                 raise ValueError("The number of days should be greater than zero")
+            
+        if showzeros:
+            df_growth = pd.DataFrame.from_dict(growth, orient='index', columns=['growth'])
+            df_cumulative_growth = pd.DataFrame.from_dict(cumulative_growth, orient='index', columns=['cumulative_growth'])
+                
+            if last_days > 0:
+                full_date_range = pd.date_range(start=(datetime.now() - timedelta(days=last_days)).strftime("%Y-%m-%d"), end=datetime.now().strftime("%Y-%m-%d"), freq='D')
+            elif last_days == 0:
+                full_date_range = pd.date_range(start=df_growth.index.min(), end=datetime.now(), freq='D')
+            
+            df_growth_filled = df_growth.reindex(full_date_range, fill_value=0)
+            df_growth_filled.index = df_growth_filled.index.strftime("%Y-%m-%d")
+            df_growth_filled.update(df_growth)
+            
+            df_cumulative_growth_filled = df_cumulative_growth.reindex(full_date_range, fill_value=0)
+            df_cumulative_growth_filled.index = df_cumulative_growth_filled.index.strftime("%Y-%m-%d")
+            df_cumulative_growth_filled.update(df_cumulative_growth)
+
+            growth = df_growth_filled.to_dict()['growth']
+            cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
         
         return {"growth": dict(growth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
