@@ -1,7 +1,7 @@
 import mlflow.artifacts
 from mlflow.tensorflow import load_model
 from mlflow.tracking import MlflowClient
-from datetime import datetime
+from datetime import datetime, timedelta
 from DataAnalysis.predictive.PredictiveEngine.ModelOptimizer.GrowthModel import GrowthModel
 from DataAnalysis.descriptive.CustomerSignup import CustomerSignup
 from DataAnalysis.descriptive.OrdersAmount import OrdersAmount
@@ -29,10 +29,6 @@ class DataPredictor:
             mlflow.set_tracking_uri(getenv("MLFLOWURL"))
             experiment = client.get_experiment_by_name("GrowthEx")
 
-            print(data_analysis)
-
-            print(OPTIONS[option]['lag'], OPTIONS[option]['sequence_lenght'], OPTIONS[option]['rolling_mean'])
-
             if experiment is None:
                 raise Exception('Experiment not found')
             else: 
@@ -48,15 +44,11 @@ class DataPredictor:
                 max_results=1,
                 order_by=["metrics.train_mse DESC", "metrics.train_mae DESC"]
             )
-                
-            print(runs)
 
             if not runs:
                 raise Exception('No runs found for the given parameters')
 
             best_run = runs[0]
-
-            print(best_run.info.run_id, best_run.info.artifact_uri)
                 
             return best_run.info.run_id, best_run.info.artifact_uri
         except Exception as e:
@@ -89,10 +81,22 @@ class DataPredictor:
         self._getScalerOfModel(best_model_id, "model/scaler_y.pkl")
         self._getScalerOfModel(best_model_id, "model/scaler_X.pkl")
 
-    def _to_datetime_timestamp(self, date: datetime):
-        return date.timestamp()
+    def _to_datetime_timestamp(self, date):
+        if isinstance(date, str):
+            if len(date) == 2:
+                dt = datetime.strptime(date, "%m")
+                dt = datetime(datetime.now().year, dt.month, 1)
+            elif len(date) == 4:
+                dt = datetime.strptime(date, "%Y")
+                dt = datetime(dt.year, 1, 1)
+            else:
+                dt = datetime.strptime(date, "%Y-%m-%d")
+        else:
+            dt = date
+
+        return dt.timestamp()
     
-    def predict(self, X_pred, data_analysis:str, option:str):
+    def predict(self, data_analysis:str, option:str):
         self.loadBestModel(data_analysis, option)
         if self.model is None:
             raise Exception("Model not loaded")
@@ -103,44 +107,99 @@ class DataPredictor:
 
         if data_analysis == "CumulativeCustomerGrowth":
             growth = GrowthModel("CumulativeCustomerGrowth", "cumulative_growth", data_source=CustomerSignup())
-            X_test = self._getTestData(option, growth.data_source)
-            X_test = X_test['cumulative_growth']
+            X_test = self._getHistoricalData(option, growth.data_source, growth.growthtype)
         elif data_analysis == "CustomerGrowth":
             growth = GrowthModel("CustomerGrowth", "growth", data_source=CustomerSignup())
-            X_test = self._getTestData(option, growth.data_source)
-            X_test = X_test['growth']
+            X_test = self._getHistoricalData(option, growth.data_source, growth.growthtype)
         elif data_analysis == "CumulativeOrdersGrowth":
             growth = GrowthModel("CumulativeOrdersGrowth", "cumulative_growth", data_source=OrdersAmount())
-            X_test = self._getTestData(option, growth.data_source)
-            X_test = X_test['cumulative_growth']
+            X_test = self._getHistoricalData(option, growth.data_source, growth.growthtype)
         elif data_analysis == "OrdersGrowth":
             growth = GrowthModel("OrdersGrowth", "growth", data_source=OrdersAmount())
-            X_test = self._getTestData(option, growth.data_source)
-            X_test = X_test['growth']
+            X_test = self._getHistoricalData(option, growth.data_source, growth.growthtype)
         
         try:
 
-            pred = growth.predict(X_test, X_pred ,self.model, self.scaler_y, self.scaler_X, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], OPTIONS[option]["sequence_lenght"])
+            pred = growth.predict(X_test, self.model, self.scaler_y, self.scaler_X, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], OPTIONS[option]["sequence_lenght"], option)
         
         except Exception as e:
             raise Exception(f"Failed to predict: {e}")
 
         return pred
     
-    def _getTestData(self, option:str, data_source: CustomerSignup | OrdersAmount):
+    def _getHistoricalData(self, option:str, data_source: CustomerSignup | OrdersAmount, growthtype: str):
         amount_historical_data = 0
-        if option == "one_day":
-            amount_historical_data = 2 * OPTIONS[option]["sequence_lenght"] + max(OPTIONS[option]["rolling_mean"], OPTIONS[option]["lag"]) + 3
-            X_data = data_source.perform(last_days=amount_historical_data)
-        elif option == "seven_days":
-            amount_historical_data = 2 * OPTIONS[option]["sequence_lenght"] + max(OPTIONS[option]["rolling_mean"], OPTIONS[option]["lag"]) + 3
-            X_data = data_source.perform(last_days=amount_historical_data)
-        elif option == "month":
-            amount_historical_data = 2 * OPTIONS[option]["sequence_lenght"] + max(OPTIONS[option]["rolling_mean"], OPTIONS[option]["lag"]) + 3
-            X_data = data_source.perform(last_days=amount_historical_data)
-        elif option == "year":
-            amount_historical_data = 2 * OPTIONS[option]["sequence_lenght"] + max(OPTIONS[option]["rolling_mean"], OPTIONS[option]["lag"]) + 3
-            X_data = data_source.perform(last_days=amount_historical_data)
+        try:
+            if option == "one_day":
+                amount_historical_data = 2 * OPTIONS[option]["sequence_lenght"] + max(OPTIONS[option]["rolling_mean"], OPTIONS[option]["lag"]) + OPTIONS[option]["rolling_mean"]
+                X_data = data_source.perform(last_days=amount_historical_data, showzeros=True)
+                analysis = list(X_data.keys())[0]
+                X_data = X_data[analysis]
+                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], amount_historical_data=amount_historical_data, growthtype=growthtype)
+            elif option == "seven_days":
+                amount_historical_data = 2 * OPTIONS[option]["sequence_lenght"] + max(OPTIONS[option]["rolling_mean"], OPTIONS[option]["lag"]) + OPTIONS[option]["rolling_mean"]
+                X_data = data_source.perform(last_days=amount_historical_data, showzeros=True)
+                analysis = list(X_data.keys())[0]
+                X_data = X_data[analysis]
+                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], amount_historical_data=amount_historical_data, growthtype=growthtype)
+            elif option == "month":
+                amount_historical_data = OPTIONS[option]["sequence_lenght"] + OPTIONS[option]["rolling_mean"]
+                X_data = data_source.perform(month=True, showzeros=True)
+                analysis = list(X_data.keys())[0]
+                X_data = X_data[analysis]
+                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], amount_historical_data=amount_historical_data, growthtype=growthtype)
+            elif option == "year":
+                amount_historical_data = OPTIONS[option]["sequence_lenght"] + OPTIONS[option]["rolling_mean"]
+                X_data = data_source.perform(year=True, showzeros=True)
+                analysis = list(X_data.keys())[0]
+                X_data = X_data[analysis]
+                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], amount_historical_data=amount_historical_data, growthtype=growthtype)
+            return X_data
+        except Exception as e:
+            raise Exception(f"Failed to get historical data: {e}")
+    
+    def _createContinuousData(self, X_data, amount_historical_data: int):
+        try:
+            X_data['timestamp'] = pd.to_datetime(X_data['timestamp'], unit='s')
+
+            X_data = X_data.set_index('timestamp')
+
+            full_date_range = pd.date_range(start=(datetime.now() - timedelta(days=amount_historical_data)), end=X_data.index.max(), freq='D')
+            X_test_filled = X_data.reindex(full_date_range, fill_value=0)
+
+            X_test_filled = X_test_filled.reset_index().rename(columns={'index': 'timestamp'})
+
+            X_test_filled['timestamp'] = X_test_filled['timestamp'].apply(lambda x: x.timestamp())
+
+            return X_test_filled
+
+        except Exception as e:
+            print(f"Error in _createContinuousData: {e}")
+            return None
         
-        return X_data
+    def _prepare_test_data(self, X_test_raw, lag, rolling_mean, amount_historical_data: int, growthtype:str):
+        try:
+            print(X_test_raw)
+            X = np.array([self._to_datetime_timestamp(key) for key in X_test_raw])
+            y = np.array([int(X_test_raw[value]) for value in X_test_raw])
+            df = pd.DataFrame(y, columns=[growthtype])
+            df['timestamp'] = X
+
+            df.drop(columns=[growthtype], inplace=True)
+
+            for i in range(1, lag + 1):
+                df[f'lag_{i}'] = df['timestamp'].shift(i)
+
+            df['rolling_mean'] = df['timestamp'].rolling(window=rolling_mean).mean()
+
+            print(df)
+            df.dropna(inplace=True)
+
+            print(df)
+
+        except Exception as e:
+            raise e
+
+        return df
+
         

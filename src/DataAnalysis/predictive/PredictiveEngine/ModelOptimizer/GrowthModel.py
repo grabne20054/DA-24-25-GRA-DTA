@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 from os import getenv
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timedelta
 import tensorflow as tf
 import pandas as pd
 from sklearn.preprocessing import RobustScaler, StandardScaler
@@ -44,12 +44,16 @@ class GrowthModel(PredictiveAnalysis):
     
     def collect(self, month: bool = False, year: bool = False):
         try:
+            showzeros = False
+            if self.growthtype == 'growth':
+                print(self.growthtype, showzeros)
+                showzeros = True
             if year:
-                return self.data_source.perform(year=year)
+                return self.data_source.perform(year=year, showzeros=showzeros)
             elif month:
-                return self.data_source.perform(month=month)
+                return self.data_source.perform(month=month, showzeros=showzeros)
             else:
-                return self.data_source.perform()
+                return self.data_source.perform(showzeros=showzeros)
         except Exception as e:
             print(f"Error in collect: {e}")
             return None
@@ -193,7 +197,7 @@ class GrowthModel(PredictiveAnalysis):
         for num_units in [120]:
             for dropout in [0.1]:
                 for learning_rate in [1e-5]:
-                    for epoch in [10]:
+                    for epoch in [50]:
                         for l2_reg in [1e-4]:
 
                             print('Running with', num_units, 
@@ -272,73 +276,24 @@ class GrowthModel(PredictiveAnalysis):
     def perform(self, lag, rolling_mean, sequence_length, month: bool = False, year: bool = False):
             self.find_best_params(lag=lag, rolling_mean=rolling_mean, sequence_length=sequence_length, month=month, year=year)
 
-    def _prepare_test_data(self, X_test_raw, X_pred ,lag, rolling_mean):
-        try:
-            combined_items = list(X_test_raw.items()) + list(X_pred.items())
-            X_test_raw = dict(combined_items)
-            X = np.array([self._to_datetime_timestamp(key) for key in X_test_raw])
-            y = np.array([int(X_test_raw[value]) for value in X_test_raw])
-            df = pd.DataFrame(y, columns=[self.growthtype])
-            df['timestamp'] = X
-
-            df.drop(columns=[self.growthtype], inplace=True)
-
-            df = self._createContinuousData(df)
-
-
-            for i in range(1, lag + 1):
-                df[f'lag_{i}'] = df['timestamp'].shift(i)
-
-            df['rolling_mean'] = df['timestamp'].rolling(window=rolling_mean).mean()
-            df.dropna(inplace=True)
-
-        except Exception as e:
-            raise e
-
-        return df
-    
-
-    def _createContinuousData(self, X_test_raw):
-        try:
-            X_test_raw['timestamp'] = pd.to_datetime(X_test_raw['timestamp'], unit='s')
-
-            X_test_raw = X_test_raw.set_index('timestamp')
-
-            full_date_range = pd.date_range(start=X_test_raw.index.min(), end=X_test_raw.index.max(), freq='D')
-            X_test_filled = X_test_raw.reindex(full_date_range, fill_value=0)
-
-            X_test_filled = X_test_filled.reset_index().rename(columns={'index': 'timestamp'})
-            print(X_test_filled)
-
-            X_test_filled['timestamp'] = X_test_filled['timestamp'].apply(lambda x: x.timestamp())
-
-            return X_test_filled
-
-        except Exception as e:
-            print(f"Error in _createContinuousData: {e}")
-            return None
-
+    # TODO scaler log, refactor...
     def _normalize_X_test(self, X_test, pipeline : Pipeline):
         if len(X_test) == 0:
             raise ValueError("Training or testing data is empty.")
     
-        X_test = pipeline.transform(X_test)
+        X_test = pipeline.fit_transform(pd.DataFrame(X_test))
 
         return X_test, pipeline
 
 
-    def predict(self, X_test_raw, X_pred ,model, scaler_y, scaler_X, lag, rolling_mean, sequence_length):
-        X_test_raw = self._prepare_test_data(X_test_raw, X_pred, lag, rolling_mean)
-
+    def predict(self, X_test_raw, model, scaler_y, scaler_X, lag, rolling_mean, sequence_length, option:str):
         X_test, _ = self._normalize_X_test(X_test_raw, scaler_X)
-
         X_test_seq = []
         for i in range(len(X_test) - sequence_length):
             X_test_seq.append(X_test[i:i + sequence_length])
 
-        X_test = np.array(X_test_seq).reshape(len(X_test_seq), sequence_length, -1)
+        X_test = np.array(X_test_seq)
         y_pred = model.predict(X_test)
-
 
         y_pred = self._unscale_y(y_pred, scaler_y)
 
@@ -347,10 +302,21 @@ class GrowthModel(PredictiveAnalysis):
         for i in range(len(y_pred_list)):
             y_pred_list[i] = y_pred_list[i][0]
 
-        for i, key in enumerate(X_pred.keys()):
-            X_pred[key] = y_pred_list[i]
-
-        return X_pred
+        if option == "one_day":
+            return {(datetime.now() + timedelta(days=1)).isoformat().split("T")[0] :  y_pred_list[0]}
+        elif option == "seven_days":
+            res = {}
+            seven_days = [datetime.now() + timedelta(days=i+1) for i in range(7)]
+            print(seven_days)
+            for i in seven_days:
+                res[i.isoformat().split("T")[0]] = y_pred_list[seven_days.index(i)]
+            return res
+        elif option == "month":
+            return {datetime.now().month :  y_pred_list[0]}
+        elif option == "year":
+            return {datetime.now().year :  y_pred_list[0]}
+        
+            
 
     def _save_scaler(self, scaler, scaler_path):
         with open(scaler_path, "wb") as file:
