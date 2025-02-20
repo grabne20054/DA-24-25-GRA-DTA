@@ -122,6 +122,9 @@ class CustomerSignup(DescriptiveAnalysis):
             df_cumulative_growth_filled.index = df_cumulative_growth_filled.index
             df_cumulative_growth_filled.update(df_cumulative_growth)
 
+            df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
+            df_cumulative_growth_filled.fillna(method="ffill", inplace=True)
+
             yearlygrowth = df_growth_filled.to_dict()['growth']
             cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
 
@@ -165,6 +168,9 @@ class CustomerSignup(DescriptiveAnalysis):
             df_cumulative_growth_filled = df_cumulative_growth.reindex(month_index, fill_value=0)
             df_cumulative_growth_filled.index = df_cumulative_growth_filled.index
             df_cumulative_growth_filled.update(df_cumulative_growth)
+
+            df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
+            df_cumulative_growth_filled.fillna(method="ffill", inplace=True)
 
             monthlygrowth = df_growth_filled.to_dict()['growth']
             cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
@@ -222,6 +228,9 @@ class CustomerSignup(DescriptiveAnalysis):
             df_cumulative_growth_filled = df_cumulative_growth.reindex(full_date_range, fill_value=0)
             df_cumulative_growth_filled.index = df_cumulative_growth_filled.index.strftime("%Y-%m-%d")
             df_cumulative_growth_filled.update(df_cumulative_growth)
+            
+            df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
+            df_cumulative_growth_filled.fillna(method="ffill", inplace=True)
 
             growth = df_growth_filled.to_dict()['growth']
             cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
