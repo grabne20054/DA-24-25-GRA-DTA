@@ -116,7 +116,7 @@ class OrdersAmount(DescriptiveAnalysis):
             df_cumulative_growth_filled.update(df_cumulative_growth)
 
             df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
-            df_cumulative_growth_filled.fillna(method="ffill", inplace=True)
+            df_cumulative_growth_filled.ffill( inplace=True)
 
             yearlygrowth = df_growth_filled.to_dict()['growth']
             cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
@@ -164,7 +164,7 @@ class OrdersAmount(DescriptiveAnalysis):
 
             
             df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
-            df_cumulative_growth_filled.fillna(method="ffill", inplace=True)
+            df_cumulative_growth_filled.ffill( inplace=True)
 
             monthlygrowth = df_growth_filled.to_dict()['growth']
             cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
@@ -194,13 +194,13 @@ class OrdersAmount(DescriptiveAnalysis):
 
         for i in data:
             i['orderDate'] = i['orderDate'].split("t")[0]
-            if last_days > 0:
+            if last_days > 0 and showzeros is False:
                 if datetime.strptime(i['orderDate'], "%Y-%m-%d") >= datetime.now() - timedelta(days=last_days):
                     growth[i['orderDate']] += 1
                     total += 1
 
                     cumulative_growth[i['orderDate']] = total
-            elif last_days == 0:
+            elif showzeros or last_days == 0:
                 growth[i['orderDate']] += 1
                 total += 1
                 cumulative_growth[i['orderDate']] = total
@@ -210,11 +210,7 @@ class OrdersAmount(DescriptiveAnalysis):
         if showzeros:
             df_growth = pd.DataFrame.from_dict(growth, orient='index', columns=['growth'])
             df_cumulative_growth = pd.DataFrame.from_dict(cumulative_growth, orient='index', columns=['cumulative_growth'])
-                
-            if last_days > 0:
-                full_date_range = pd.date_range(start=(datetime.now() - timedelta(days=last_days)).strftime("%Y-%m-%d"), end=datetime.now().strftime("%Y-%m-%d"), freq='D')
-            elif last_days == 0:
-                full_date_range = pd.date_range(start=df_growth.index.min(), end=datetime.now(), freq='D')
+            full_date_range = pd.date_range(start=df_growth.index.min(), end=datetime.now(), freq='D')
             
             df_growth_filled = df_growth.reindex(full_date_range, fill_value=0)
             df_growth_filled.index = df_growth_filled.index.strftime("%Y-%m-%d")
@@ -225,9 +221,13 @@ class OrdersAmount(DescriptiveAnalysis):
             df_cumulative_growth_filled.update(df_cumulative_growth)
 
             df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
-            df_cumulative_growth_filled.fillna(method="ffill", inplace=True)
+            df_cumulative_growth_filled.ffill(inplace=True)
 
-            growth = df_growth_filled.to_dict()['growth']
-            cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
+            if last_days > 0:
+                growth = df_growth_filled['growth'].iloc[-last_days:].to_dict()
+                cumulative_growth = df_cumulative_growth_filled['cumulative_growth'].iloc[-last_days:].to_dict()
+            elif last_days == 0:
+                growth = df_growth_filled.to_dict()['growth']
+                cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
         
         return {"growth": dict(growth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
