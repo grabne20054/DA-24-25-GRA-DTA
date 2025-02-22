@@ -1,10 +1,45 @@
 import requests
 from random import randint
 import datetime
+from time import sleep
 
-API_URL = "http://localhost:8002" # oder "http://185.243.187.210:8002"
+API_URL = "http://185.243.187.210:8002" # oder "http://185.243.187.210:8002"
+
+def postAdressMockData():
+    address = {
+        "streetName": "string",
+        "streetNumber": "string",
+        "city": "string",
+        "postCode": "string",
+        "country": "string",
+        "state": "string",
+        "modifiedAt": "2025-02-22T12:43:40.199Z",
+        "deleted": True
+        }
+
+    for i in range(0, 100):
+        address["streetName"] = "streetName" + str(i)
+        address["streetNumber"] = "streetNumber" + str(i)
+        address["city"] = "city" + str(i)
+        address["postCode"] = "postCode" + str(i)
+        address["country"] = "country" + str(i)
+        address["state"] = "state" + str(i)
+        address["modifiedAt"] = "2025-02-22T12:43:40.199Z"
+        address["deleted"] = False
+        res = requests.post(API_URL +"/addresses", json=address)
+
+        print(res.text)
+    sleep(2)
 
 def customerSignupMockData():
+
+    adresses = requests.get(API_URL +"/addresses")
+    if adresses.status_code == 200:
+        adresses = adresses.json()
+    else:
+        print(f"Failed to fetch addresses: {adresses.status_code}")
+        return
+
 
     customer = {
         "firstName": "John",
@@ -31,14 +66,15 @@ def customerSignupMockData():
         customer["phoneNumber"] = "phoneNumber" + str(i)
         customer["companyNumber"] = "companyName" + str(i)
         customer["businessSector"] = ["tourism", "it", "agriculture"][randint(0, 2)]
+        customer["addressId"] = adresses[randint(0, len(adresses) - 1)]["addressId"]
         year = str(randint(2022, datetime.datetime.now().year))
         month = str(randint(1, 12)).zfill(2)  # Zero-padding for month
         day = str(randint(1, 28)).zfill(2)    # Zero-padding for day
         customer["signedUp"] = f"{year}-{month}-{day}T19:49:40.433Z"
-        if customer["signedUp"] <= datetime.datetime.now().isoformat():
-            res = requests.post(API_URL +"/customers", json=customer)
+        res = requests.post(API_URL +"/customers", json=customer)
 
         print(res.text)
+    sleep(2)
 
 def postManyOrders():
     order = {
@@ -50,8 +86,8 @@ def postManyOrders():
             "selfCollect": True,
     }
 
-    for i in range(0, 999):
-        order["customerReference"] = randint(0, 400)	
+    for i in range(0, 100):
+        order["customerReference"] = randint(0, 100)	
         year = str(randint(2019, datetime.datetime.now().year - 1))
         month = str(randint(1, 12)).zfill(2)  # Zero-padding for month
         day = str(randint(1, 28)).zfill(2)    # Zero-padding for day
@@ -59,6 +95,7 @@ def postManyOrders():
         res = requests.post(API_URL +"/orders", json=order)
 
         print(res.text)
+    sleep(2)
 
 
 def postManyProducts():
@@ -76,29 +113,32 @@ def postManyProducts():
 
         res = requests.post(API_URL +"/products/", json=product)
         print(res.text)
+    sleep(2)
 
 def postManyProductOrders():
     orders = requests.get(API_URL +"/orders")
     products = requests.get(API_URL +"/products")
 
+    if orders.status_code != 200 or products.status_code != 200:
+        print("Failed to fetch orders or products")
+        return
+
     orders = orders.json()
     products = products.json()
 
-    counter = 0
-
-    for order in orders:
+    for _ in range(200):
+        order = orders[randint(0, len(orders) - 1)]
+        product = products[randint(0, len(products) - 1)]
         order_id = order["orderId"]
-        for product in products:
-            counter += 1
-            product_id = product["productId"]
-            year = str(randint(2019, datetime.datetime.now().year - 1))
-            month = str(randint(1, 12)).zfill(2)  # Zero-padding for month
-            day = str(randint(1, 28)).zfill(2)    # Zero-padding for day
-            orderDate = f"{year}-{month}-{day}T19:49:40.433Z"
-            res = requests.post(API_URL +f"/ordersProducts/{order_id}/{product_id}/{randint(1,20)}/{orderDate}")
-            print(res.text)
-        if counter == 10:
-            break
+        product_id = product["productId"]
+        year = str(randint(2019, datetime.datetime.now().year - 1))
+        month = str(randint(1, 12)).zfill(2)  # Zero-padding for month
+        day = str(randint(1, 28)).zfill(2)    # Zero-padding for day
+        orderDate = f"{year}-{month}-{day}T19:49:40.433Z"
+        res = requests.post(API_URL +f"/ordersProducts/{order_id}/{product_id}/{randint(1,20)}/{orderDate}")
+        print(res.text)
+
+    sleep(2)
 
 def postManyRoutes():
     for i in range(0, 100):
@@ -109,29 +149,31 @@ def postManyRoutes():
 
         res = requests.post(API_URL +"/routes/", json=route)
         print(res.text)
+    sleep(2)
 
 def postRoutesOrders():
     routes = requests.get(API_URL +"/routes")
     orders = requests.get(API_URL +"/orders")
 
+    if routes.status_code != 200 or orders.status_code != 200:
+        print("Failed to fetch routes or orders")
+        return
+
     routes = routes.json()
     orders = orders.json()
 
-    counter = 0
-    for order in orders:
+    for _ in range(100):
+        route = routes[randint(0, len(routes) - 1)]
+        order = orders[randint(0, len(orders) - 1)]
+        route_id = route["routeId"]
         order_id = order["orderId"]
-        for route in routes:
-            route_id = route["routeId"]
-            if route["name"] == "string":
-                continue
-            res = requests.post(API_URL +f"/routesOrders/{route_id}/{order_id}")
-            counter += 1
-            print(res.text)
-        if counter == 10:
-            break
+        res = requests.post(API_URL +f"/routesOrders/{route_id}/{order_id}")
+        print(res.text)
+    sleep(2)
             
 
 if __name__ == "__main__":
+    postAdressMockData() #0
     customerSignupMockData() #1
     postManyProducts() #2
     postManyOrders() #3
