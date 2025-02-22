@@ -1,3 +1,6 @@
+include:
+  - ../../../mlflow/docker-compose.yml
+
 services:
   model-optimizer:
     build:
