@@ -44,15 +44,13 @@ class GrowthModel(PredictiveAnalysis):
     
     def collect(self, month: bool = False, year: bool = False):
         try:
-            showzeros = False
-            if self.growthtype == 'growth':
-                print(self.growthtype, showzeros)
-                showzeros = True
+            showzeros = True
             if year:
                 return self.data_source.perform(year=year, showzeros=showzeros)
             elif month:
                 return self.data_source.perform(month=month, showzeros=showzeros)
             else:
+                print(self.data_source.perform(showzeros=showzeros))
                 return self.data_source.perform(showzeros=showzeros)
         except Exception as e:
             print(f"Error in collect: {e}")
@@ -197,7 +195,7 @@ class GrowthModel(PredictiveAnalysis):
         for num_units in [120]:
             for dropout in [0.1]:
                 for learning_rate in [1e-5]:
-                    for epoch in [50]:
+                    for epoch in [500]:
                         for l2_reg in [1e-4]:
 
                             print('Running with', num_units, 
@@ -212,6 +210,10 @@ class GrowthModel(PredictiveAnalysis):
                             model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse', metrics=[ 'mae'])
 
                             history = model.fit(X_train, y_train, epochs=epoch, batch_size=32,  validation_data=(X_test, y_test), verbose=1)
+
+                            y_pred = model.predict(X_test)
+                            y_pred = self._unscale_y(y_pred, scaler_y)
+                            print('Predicted:', y_pred)
                            
                             num_epochs = len(history.history['val_loss'])
                             best_epoch = np.argmin(history.history['val_loss'])
@@ -280,6 +282,11 @@ class GrowthModel(PredictiveAnalysis):
     def _normalize_X_test(self, X_test, pipeline : Pipeline):
         if len(X_test) == 0:
             raise ValueError("Training or testing data is empty.")
+        
+        pipeline = Pipeline([
+            ('robust_scaler', RobustScaler()),
+            ('std_scaler', StandardScaler())
+        ])
     
         X_test = pipeline.fit_transform(pd.DataFrame(X_test))
 
@@ -293,6 +300,7 @@ class GrowthModel(PredictiveAnalysis):
             X_test_seq.append(X_test[i:i + sequence_length])
 
         X_test = np.array(X_test_seq)
+        print(X_test)
         y_pred = model.predict(X_test)
 
         y_pred = self._unscale_y(y_pred, scaler_y)
@@ -307,14 +315,13 @@ class GrowthModel(PredictiveAnalysis):
         elif option == "seven_days":
             res = {}
             seven_days = [datetime.now() + timedelta(days=i+1) for i in range(7)]
-            print(seven_days)
             for i in seven_days:
                 res[i.isoformat().split("T")[0]] = y_pred_list[seven_days.index(i)]
             return res
         elif option == "month":
-            return {datetime.now().month :  y_pred_list[0]}
+            return {str(datetime.now().month + 1).zfill(2) :  y_pred_list[0]}
         elif option == "year":
-            return {datetime.now().year :  y_pred_list[0]}
+            return {datetime.now().year + 1 :  y_pred_list[0]}
         
             
 

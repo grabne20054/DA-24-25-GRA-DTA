@@ -129,11 +129,15 @@ class DataPredictor:
     
     def _getHistoricalData(self, option:str, data_source: CustomerSignup | OrdersAmount, growthtype: str):
         amount_historical_data = 0
+        if growthtype == "cumulative_growth":
+            index = 1
+        elif growthtype == "growth":
+            index = 0
         try:
             if option == "one_day":
                 amount_historical_data = 2 * OPTIONS[option]["sequence_lenght"] + max(OPTIONS[option]["rolling_mean"], OPTIONS[option]["lag"]) + OPTIONS[option]["rolling_mean"]
                 X_data = data_source.perform(last_days=amount_historical_data, showzeros=True)
-                analysis = list(X_data.keys())[0]
+                analysis = list(X_data.keys())[index]
                 X_data = X_data[analysis]
                 X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], amount_historical_data=amount_historical_data, growthtype=growthtype)
             elif option == "seven_days":
@@ -145,37 +149,18 @@ class DataPredictor:
             elif option == "month":
                 amount_historical_data = OPTIONS[option]["sequence_lenght"] + OPTIONS[option]["rolling_mean"]
                 X_data = data_source.perform(month=True, showzeros=True)
-                analysis = list(X_data.keys())[0]
+                analysis = list(X_data.keys())[index]
                 X_data = X_data[analysis]
                 X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], amount_historical_data=amount_historical_data, growthtype=growthtype)
             elif option == "year":
                 amount_historical_data = OPTIONS[option]["sequence_lenght"] + OPTIONS[option]["rolling_mean"]
                 X_data = data_source.perform(year=True, showzeros=True)
-                analysis = list(X_data.keys())[0]
+                analysis = list(X_data.keys())[index]
                 X_data = X_data[analysis]
                 X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], amount_historical_data=amount_historical_data, growthtype=growthtype)
             return X_data
         except Exception as e:
             raise Exception(f"Failed to get historical data: {e}")
-    
-    def _createContinuousData(self, X_data, amount_historical_data: int):
-        try:
-            X_data['timestamp'] = pd.to_datetime(X_data['timestamp'], unit='s')
-
-            X_data = X_data.set_index('timestamp')
-
-            full_date_range = pd.date_range(start=(datetime.now() - timedelta(days=amount_historical_data)), end=X_data.index.max(), freq='D')
-            X_test_filled = X_data.reindex(full_date_range, fill_value=0)
-
-            X_test_filled = X_test_filled.reset_index().rename(columns={'index': 'timestamp'})
-
-            X_test_filled['timestamp'] = X_test_filled['timestamp'].apply(lambda x: x.timestamp())
-
-            return X_test_filled
-
-        except Exception as e:
-            print(f"Error in _createContinuousData: {e}")
-            return None
         
     def _prepare_test_data(self, X_test_raw, lag, rolling_mean, amount_historical_data: int, growthtype:str):
         try:
@@ -191,11 +176,7 @@ class DataPredictor:
                 df[f'lag_{i}'] = df['timestamp'].shift(i)
 
             df['rolling_mean'] = df['timestamp'].rolling(window=rolling_mean).mean()
-
-            print(df)
             df.dropna(inplace=True)
-
-            print(df)
 
         except Exception as e:
             raise e
