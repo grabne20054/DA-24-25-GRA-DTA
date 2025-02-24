@@ -24,7 +24,7 @@ class ProductsAmount(DescriptiveAnalysis):
         try:
             return self.handler.start()
         except ConnectionRefusedError as e:
-            print("Connection refused: ", e)
+            print("Connection refused: ", e)    
 
         except ConnectionError as e:
             print("Connection error: ", e)
@@ -55,6 +55,9 @@ class ProductsAmount(DescriptiveAnalysis):
 
         if limit < 0:
             raise Exception("Limit cannot be negative")
+        
+        if limit == 0:
+            limit = len(data)
 
         products = {}
 

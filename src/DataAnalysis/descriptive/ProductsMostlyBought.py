@@ -14,7 +14,6 @@ class ProductsMostlyBought(DescriptiveAnalysis):
     def __init__(self) -> None:
         self.handler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/ordersProducts")
         self.productshandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/products")
-        self.ordershandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/orders")
     
     def collect(self) -> list:
         """
@@ -87,25 +86,6 @@ class ProductsMostlyBought(DescriptiveAnalysis):
                 return i['name']
         
         raise Exception("Product not found")
-    
-    def _getOrderDate(self, order_id: int) -> str:
-        """
-        Gets the order date from the order ID
-
-        Args:
-            order_id (int): Order ID
-
-        Returns:
-            str: Order date
-
-        Raises:
-            Exception: Order not found
-        """
-        for i in self.ordershandler.start():
-            if i['orderId'] == order_id:
-                return i['orderDate']
-        
-        raise Exception("Order not found")
 
     def _getYearlyPurchases(self, data: list, limit) -> dict:
         """
@@ -124,14 +104,20 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         products_bought = {}
         seen = set()
         for i in data:
-            if datetime.strptime(self._getOrderDate(i['orderId']), "%Y-%m-%dT%H:%M:%S.%f").year == datetime.now().year:
+            if datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f").year == datetime.now().year:
                 if i['productId'] not in seen:
-                    products_bought[self._getProductNameById(i['productId'])] = i['productAmount']
+                    products_bought[i['productId']] = i['productAmount']
                     seen.add(i['productId'])
                 else:
-                    products_bought[self._getProductNameById(i['productId'])] += i['productAmount']
+                    products_bought[i['productId']] += i['productAmount']
 
         products_bought = dict(list(sorted(products_bought.items(), key=lambda item: item[1], reverse=True))[:limit])
+
+        products_bought_named = {}
+        for i in products_bought.keys():
+            product_name = self._getProductNameById(i)
+            products_bought_named[product_name] = products_bought[i]
+        products_bought = products_bought_named
 
         return {"products" : products_bought, "typeofgraph" : TYPEOFGRAPH}
     
@@ -149,14 +135,20 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         products_bought = {}
         seen = set()
         for i in data:
-            if datetime.strptime(self._getOrderDate(i['orderId']), "%Y-%m-%dT%H:%M:%S.%f").month == self._getCurrentMonth():
+            if datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f").month == self._getCurrentMonth():
                 if i['productId'] not in seen:
-                    products_bought[self._getProductNameById(i['productId'])] = i['productAmount']
+                    products_bought[i['productId']] = i['productAmount']
                     seen.add(i['productId'])
                 else:
-                    products_bought[self._getProductNameById(i['productId'])] += i['productAmount']
+                    products_bought[i['productId']] += i['productAmount']
 
         products_bought = dict(list(sorted(products_bought.items(), key=lambda item: item[1], reverse=True))[:limit])
+
+        products_bought_named = {}
+        for i in products_bought.keys():
+            product_name = self._getProductNameById(i)
+            products_bought_named[product_name] = products_bought[i]
+        products_bought = products_bought_named
 
         return {"products" : products_bought, "typeofgraph" : TYPEOFGRAPH}
     
@@ -174,27 +166,42 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         Raises:
             ValueError: If the number of days is less than zero
         """
+
+        if limit > len(data):
+            raise Exception("Limit is greater than the amount of bought products present")
+        
+        if limit < 0:
+            raise Exception("Limit cannot be negative")
+        
+        if limit == 0:
+            limit = len(data)
         
         products_bought = {}
         seen = set()
         for i in data:
             if last_days > 0:
-                if (datetime.strptime(self._getOrderDate(i['orderId']), "%Y-%m-%dT%H:%M:%S.%f") >= datetime.now() - timedelta(days=last_days)) and (datetime.strptime(self._getOrderDate(i['orderId']), "%Y-%m-%dT%H:%M:%S.%f") <= datetime.now()):
+                if datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f") >= datetime.now() - timedelta(days=last_days) and datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f") <= datetime.now():
                     if i['productId'] not in seen:
-                        products_bought[self._getProductNameById(i['productId'])] = i['productAmount']
+                        products_bought[i['productId']] = i['productAmount']
                         seen.add(i['productId'])
                     else:
-                        products_bought[self._getProductNameById(i['productId'])] += i['productAmount']
+                        products_bought[i['productId']] += i['productAmount']
             elif last_days == 0:
                 if i['productId'] not in seen:
-                    products_bought[self._getProductNameById(i['productId'])] = i['productAmount']
+                    products_bought[i['productId']] = i['productAmount']
                     seen.add(i['productId'])
                 else:
-                    products_bought[self._getProductNameById(i['productId'])] += i['productAmount']
+                    products_bought[i['productId']] += i['productAmount']
             elif last_days < 0:
                 raise ValueError("The number of days should be greater than zero")
             
         products_bought = dict(list(sorted(products_bought.items(), key=lambda item: item[1], reverse=True))[:limit])
+
+        products_bought_named = {}
+        for i in products_bought.keys():
+            product_name = self._getProductNameById(i)
+            products_bought_named[product_name] = products_bought[i]
+        products_bought = products_bought_named
 
         return {"products" : products_bought, "typeofgraph" : TYPEOFGRAPH}
     
