@@ -80,11 +80,11 @@ class ProductOrdersCorrelation(DiagnosticAnalysis):
             'orderId', 'productId', 'addressId', 'customerId', 'description', 
             'deliveryDate', 'stock', 'imagePath', 'lastname', 'firstname', 
             'email', 'password', 'phoneNumber', 'signedUp', 'role', 
-            'companyNumber', 'deleted_x', 'deleted_y', 'deleted'
+            'companyNumber', 'deleted_x', 'deleted_y', 'deleted', 'orderDate_y'
         ]
 
         df_ordersProducts = df_ordersProducts.drop(columns=df_ordersProducts.columns.intersection(columns_to_drop))
-
+        df_ordersProducts = df_ordersProducts.rename(columns={'orderDate_x': 'orderDate'})
         
         df_ordersProducts['orderDate'] = pd.to_datetime(df_ordersProducts['orderDate'])
         df_ordersProducts['orderDate'] = df_ordersProducts['orderDate'].dt.strftime('%m').astype('int64')

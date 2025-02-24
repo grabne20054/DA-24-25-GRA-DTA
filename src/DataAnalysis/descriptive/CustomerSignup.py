@@ -228,7 +228,7 @@ class CustomerSignup(DescriptiveAnalysis):
             df_cumulative_growth_filled.update(df_cumulative_growth)
             
             df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
-            df_cumulative_growth_filled.fillna(method="ffill", inplace=True)
+            df_cumulative_growth_filled.ffill(inplace=True)
 
             if last_days > 0:
                 growth = df_growth_filled['growth'].iloc[-last_days:].to_dict()

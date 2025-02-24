@@ -39,8 +39,6 @@ async def get_routes_amount(limit: int = 5):
 ####################### DIAGNOSTIC #######################
 
 async def get_products_orders_correlation():
-    if ProductOrdersCorrelation.ProductOrdersCorrelation().perform() is None:
-        pass
     return ProductOrdersCorrelation.ProductOrdersCorrelation().perform()
 
 async def get_changing_price_orders_correlation(price_percentage: float = 0.1, n_random: int = 0):
@@ -126,8 +124,11 @@ async def get_cumulative_orders_growth(one_day: bool = False, seven_days: bool =
         raise HTTPException(status_code=400, detail=str(e))
 
 async def authenticate(email:str, password: str):
-    response = requests.get(f"{getenv('APIURL')}/employees?email={email}&password={password}")
-    response = response.json()
+    try:
+        response = requests.get(f"{getenv('APIURL')}/employees?email={email}&password={password}")
+        response = response.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Error connecting to the database")
     if len(response) == 0:
         raise HTTPException(status_code=401, detail="Wrong credentials")
     if response[0]['role'] == 'admin':
