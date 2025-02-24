@@ -521,29 +521,33 @@ def test17_performProductsMostlyBought(monkeypatch):
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 2,
             "orderId": 2,
-            "productAmount": 10
+            "productAmount": 10,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 3,
             "orderId": 10,
-            "productAmount": 15
+            "productAmount": 15,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 4,
             "orderId": 20,
-            "productAmount": 20
+            "productAmount": 20,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         }
-        
     ]
 
     def mock_collect(self):
@@ -552,12 +556,8 @@ def test17_performProductsMostlyBought(monkeypatch):
     def mock_getProductNameById(self, product_id):
         return "product" + str(product_id)
     
-    def mock_getOrderDate(self, oder_id):
-        return "2021-01-01"
-    
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
-    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
 
     analysis = ProductsMostlyBought.ProductsMostlyBought()
     result = ProductsMostlyBought.ProductsMostlyBought.perform(analysis)
@@ -578,43 +578,43 @@ def test18_performProductsMostlyBoughtNoProductFound(monkeypatch):
         {
             "productId": None,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": None,
             "orderId": 2,
-            "productAmount": 10
+            "productAmount": 10,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": None,
             "orderId": 10,
-            "productAmount": 15
+            "productAmount": 15,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": None,
             "orderId": 20,
-            "productAmount": 20
+            "productAmount": 20,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": None,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         }
     ]
 
     def mock_collect(self):
         return mock_data_collect
     
-    def mock_getOrderDate(self, oder_id):
-        return "2021-01-01"
-    
     def mock_getProductNameById(self, product_id):
         raise Exception("Product not found")
     
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
-    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
-
     analysis = ProductsMostlyBought.ProductsMostlyBought()
 
     with pytest.raises(Exception) as e:
@@ -635,27 +635,32 @@ def test19_performProductsMostlyBoughtNoOrderFound(monkeypatch):
         {
             "productId": 1,
             "orderId": None,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 2,
             "orderId": None,
-            "productAmount": 10
+            "productAmount": 10,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 3,
             "orderId": None,
-            "productAmount": 15
+            "productAmount": 15,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 4,
             "orderId": None,
-            "productAmount": 20
+            "productAmount": 20,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 1,
             "orderId": None,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         }
     ]
 
@@ -665,19 +670,16 @@ def test19_performProductsMostlyBoughtNoOrderFound(monkeypatch):
     def mock_getProductNameById(self, product_id):
         return "product" + str(product_id)
     
-    def mock_getOrderDate(self, order_id):
-        raise Exception("Order not found")
     
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
-    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
 
     analysis = ProductsMostlyBought.ProductsMostlyBought()
 
-    with pytest.raises(Exception) as e:
-        ProductsMostlyBought.ProductsMostlyBought.perform(analysis, last_days=1)
+    result = ProductsMostlyBought.ProductsMostlyBought.perform(analysis)
 
-    assert str(e.value) == "Order not found"
+    assert result == {"products": {'product1': 10, 'product2': 10, 'product3': 15, 'product4': 20}, "typeofgraph": "bar"} 
+
 
 def test20_performProductsMostlyBoughtLastDays(monkeypatch):
     '''
@@ -691,27 +693,32 @@ def test20_performProductsMostlyBoughtLastDays(monkeypatch):
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 2,
             "orderId": 2,
-            "productAmount": 10
+            "productAmount": 10,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 3,
             "orderId": 10,
-            "productAmount": 15
+            "productAmount": 15,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 4,
             "orderId": 20,
-            "productAmount": 20
+            "productAmount": 20,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         }
     ]
 
@@ -721,12 +728,8 @@ def test20_performProductsMostlyBoughtLastDays(monkeypatch):
     def mock_getProductNameById(self, product_id):
         return "product" + str(product_id)
     
-    def mock_getOrderDate(self, order_id):
-        return datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
-    
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
-    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
 
     analysis = ProductsMostlyBought.ProductsMostlyBought()
     result = ProductsMostlyBought.ProductsMostlyBought.perform(analysis, last_days=1)
@@ -746,27 +749,32 @@ def test21_performProductsMostlyBoughtLastDays(monkeypatch):
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 2,
             "orderId": 2,
-            "productAmount": 10
+            "productAmount": 10,
+            "orderDate": (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 3,
             "orderId": 10,
-            "productAmount": 15
+            "productAmount": 15,
+            "orderDate": (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 4,
             "orderId": 20,
-            "productAmount": 20
+            "productAmount": 20,
+            "orderDate": (datetime.now() - timedelta(days=4)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         }
     ]
 
@@ -776,19 +784,8 @@ def test21_performProductsMostlyBoughtLastDays(monkeypatch):
     def mock_getProductNameById(self, product_id):
         return "product" + str(product_id)
     
-    def mock_getOrderDate(self, order_id):
-        if order_id == 28:
-            return (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.%f")
-        elif order_id == 2:
-            return (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S.%f")
-        elif order_id == 10:
-            return (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%dT%H:%M:%S.%f")
-        elif order_id == 20:
-            return (datetime.now() - timedelta(days=4)).strftime("%Y-%m-%dT%H:%M:%S.%f")
-    
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
-    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
 
     analysis = ProductsMostlyBought.ProductsMostlyBought()
     result = ProductsMostlyBought.ProductsMostlyBought.perform(analysis, last_days=2)
@@ -805,27 +802,32 @@ def test22_performProductsMostlyBoughtLastDays(monkeypatch):
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 2,
             "orderId": 2,
-            "productAmount": 10
+            "productAmount": 10,
+            "orderDate": (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 3,
             "orderId": 10,
-            "productAmount": 15
+            "productAmount": 15,
+            "orderDate": (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 4,
             "orderId": 20,
-            "productAmount": 20
+            "productAmount": 20,
+            "orderDate": (datetime.now() - timedelta(days=4)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         }
     ]
 
@@ -835,19 +837,8 @@ def test22_performProductsMostlyBoughtLastDays(monkeypatch):
     def mock_getProductNameById(self, product_id):
         return "product" + str(product_id)
     
-    def mock_getOrderDate(self, order_id):
-        if order_id == 28:
-            return (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S.%f")
-        elif order_id == 2:
-            return (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S.%f")
-        elif order_id == 10:
-            return (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%dT%H:%M:%S.%f")
-        elif order_id == 20:
-            return (datetime.now() - timedelta(days=4)).strftime("%Y-%m-%dT%H:%M:%S.%f")
-        
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
-    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
 
     analysis = ProductsMostlyBought.ProductsMostlyBought()
     result = ProductsMostlyBought.ProductsMostlyBought.perform(analysis, last_days=1)
@@ -867,27 +858,32 @@ def test23_performProductsMostlyBoughtLastDaysNegative(monkeypatch):
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 2,
             "orderId": 2,
-            "productAmount": 10
+            "productAmount": 10,
+            "orderDate": (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 3,
             "orderId": 10,
-            "productAmount": 15
+            "productAmount": 15,
+            "orderDate": (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 4,
             "orderId": 20,
-            "productAmount": 20
+            "productAmount": 20,
+            "orderDate": (datetime.now() - timedelta(days=4)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         }
     ]
 
@@ -897,12 +893,8 @@ def test23_performProductsMostlyBoughtLastDaysNegative(monkeypatch):
     def mock_getProductNameById(self, product_id):
         return "product" + str(product_id)
     
-    def mock_getOrderDate(self, order_id):
-        return datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
-    
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
-    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
 
     analysis = ProductsMostlyBought.ProductsMostlyBought()
 
@@ -923,27 +915,32 @@ def test24_performProductsMostlyBoughtYearlyGrowth(monkeypatch):
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 2,
             "orderId": 2,
-            "productAmount": 10
+            "productAmount": 10,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 3,
             "orderId": 10,
-            "productAmount": 15
+            "productAmount": 15,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 4,
             "orderId": 20,
-            "productAmount": 20
+            "productAmount": 20,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         }
     ]
 
@@ -953,12 +950,8 @@ def test24_performProductsMostlyBoughtYearlyGrowth(monkeypatch):
     def mock_getProductNameById(self, product_id):
         return "product" + str(product_id)
     
-    def mock_getOrderDate(self, order_id):
-        return datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
-    
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
-    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
 
     analysis = ProductsMostlyBought.ProductsMostlyBought()
     result = ProductsMostlyBought.ProductsMostlyBought.perform(analysis, year=True, month=False)
@@ -978,27 +971,32 @@ def test25_performProductsMostlyBoughtYearlyGrowth(monkeypatch):
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 2,
             "orderId": 2,
-            "productAmount": 10
+            "productAmount": 10,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 3,
             "orderId": 10,
-            "productAmount": 15
+            "productAmount": 15,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 4,
             "orderId": 20,
-            "productAmount": 20
+            "productAmount": 20,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         }
     ]
 
@@ -1008,12 +1006,8 @@ def test25_performProductsMostlyBoughtYearlyGrowth(monkeypatch):
     def mock_getProductNameById(self, product_id):
         return "product" + str(product_id)
     
-    def mock_getOrderDate(self, order_id):
-        return datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
-    
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
-    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
 
     analysis = ProductsMostlyBought.ProductsMostlyBought()
     result = ProductsMostlyBought.ProductsMostlyBought.perform(analysis, year=True, month=False)
@@ -1035,27 +1029,32 @@ def test26_performProductsMostlyBoughtMonthlyGrowth(monkeypatch):
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 2,
             "orderId": 2,
-            "productAmount": 10
+            "productAmount": 10,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 3,
             "orderId": 10,
-            "productAmount": 15
+            "productAmount": 15,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 4,
             "orderId": 20,
-            "productAmount": 20
+            "productAmount": 20,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         }
     ]
 
@@ -1065,12 +1064,8 @@ def test26_performProductsMostlyBoughtMonthlyGrowth(monkeypatch):
     def mock_getProductNameById(self, product_id):
         return "product" + str(product_id)
     
-    def mock_getOrderDate(self, order_id):
-        return datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
-    
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
-    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
 
     analysis = ProductsMostlyBought.ProductsMostlyBought()
     result = ProductsMostlyBought.ProductsMostlyBought.perform(analysis, year=False, month=True)
@@ -1090,27 +1085,32 @@ def test27_performProductsMostlyBoughtMonthlyGrowth(monkeypatch):
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": (datetime.now() - timedelta(days=40)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 2,
             "orderId": 2,
-            "productAmount": 10
+            "productAmount": 10,
+            "orderDate": (datetime.now() - timedelta(days=40)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 3,
             "orderId": 10,
-            "productAmount": 15
+            "productAmount": 15,
+            "orderDate": (datetime.now() - timedelta(days=40)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 4,
             "orderId": 20,
-            "productAmount": 20
+            "productAmount": 20,
+            "orderDate": (datetime.now() - timedelta(days=40)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": (datetime.now() - timedelta(days=40)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         }
     ]
 
@@ -1120,12 +1120,8 @@ def test27_performProductsMostlyBoughtMonthlyGrowth(monkeypatch):
     def mock_getProductNameById(self, product_id):
         return "product" + str(product_id)
     
-    def mock_getOrderDate(self, order_id):
-        return '2024-10-01T00:00:00.000'
-    
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
-    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
 
     analysis = ProductsMostlyBought.ProductsMostlyBought()
     result = ProductsMostlyBought.ProductsMostlyBought.perform(analysis, year=False, month=True)
@@ -1147,27 +1143,32 @@ def test28_performProductsMostlyBoughtYearlyGrowthTrueMonthlyGrowthTrue(monkeypa
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 2,
             "orderId": 2,
-            "productAmount": 10
+            "productAmount": 10,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 3,
             "orderId": 10,
-            "productAmount": 15
+            "productAmount": 15,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 4,
             "orderId": 20,
-            "productAmount": 20
+            "productAmount": 20,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         }
     ]
 
@@ -1177,12 +1178,8 @@ def test28_performProductsMostlyBoughtYearlyGrowthTrueMonthlyGrowthTrue(monkeypa
     def mock_getProductNameById(self, product_id):
         return "product" + str(product_id)
     
-    def mock_getOrderDate(self, order_id):
-        return datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
-    
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
-    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
 
     analysis = ProductsMostlyBought.ProductsMostlyBought()
     result = ProductsMostlyBought.ProductsMostlyBought.perform(analysis, year=True, month=True)
@@ -1206,42 +1203,43 @@ def test29_performProductsMostlyBoughtYearlyGrowthTrueMonthlyGrowthTrueLastDays(
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 2,
             "orderId": 2,
-            "productAmount": 10
+            "productAmount": 10,
+            "orderDate": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 3,
             "orderId": 10,
-            "productAmount": 15
+            "productAmount": 15,
+            "orderDate": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 4,
             "orderId": 20,
-            "productAmount": 20
+            "productAmount": 20,
+            "orderDate": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         }
     ]
-
     def mock_collect(self):
         return mock_data_collect
     
     def mock_getProductNameById(self, product_id):
         return "product" + str(product_id)
     
-    def mock_getOrderDate(self, order_id):
-        return datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
     
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
-    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
 
     analysis = ProductsMostlyBought.ProductsMostlyBought()
     result = ProductsMostlyBought.ProductsMostlyBought.perform(analysis, year=True, month=True, last_days=2)
@@ -1264,27 +1262,32 @@ def test30_performProductsMostlyBoughtYearlyGrowthFalseMonthlyGrowthTrueLastDays
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": (datetime.now() - timedelta(weeks=5)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 2,
             "orderId": 2,
-            "productAmount": 10
+            "productAmount": 10,
+            "orderDate": (datetime.now() - timedelta(weeks=2)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 3,
             "orderId": 10,
-            "productAmount": 15
+            "productAmount": 15,
+            "orderDate": (datetime.now() - timedelta(weeks=3)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 4,
             "orderId": 20,
-            "productAmount": 20
+            "productAmount": 20,
+            "orderDate": (datetime.now() - timedelta(weeks=4)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 1,
             "orderId": 28,
-            "productAmount": 5
+            "productAmount": 5,
+            "orderDate": (datetime.now() - timedelta(weeks=5)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         }
     ]
 
@@ -1297,19 +1300,10 @@ def test30_performProductsMostlyBoughtYearlyGrowthFalseMonthlyGrowthTrueLastDays
     def mock_getProductNameById(self, product_id):
         return "product" + str(product_id)
     
-    def mock_getOrderDate(self, order_id):
-        if order_id == 28:
-            return (datetime.now() - timedelta(weeks=5)).strftime("%Y-%m-%dT%H:%M:%S.%f")
-        elif order_id == 2:
-            return (datetime.now() - timedelta(weeks=2)).strftime("%Y-%m-%dT%H:%M:%S.%f")
-        elif order_id == 10:
-            return (datetime.now() - timedelta(weeks=3)).strftime("%Y-%m-%dT%H:%M:%S.%f")
-        elif order_id == 20:
-            return (datetime.now() - timedelta(weeks=4)).strftime("%Y-%m-%dT%H:%M:%S.%f")
+    
         
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, 'collect', mock_collect)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getProductNameById', mock_getProductNameById)
-    monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getOrderDate', mock_getOrderDate)
     monkeypatch.setattr(ProductsMostlyBought.ProductsMostlyBought, '_getCurrentMonth', mock_getCurrentMonth)
 
     analysis = ProductsMostlyBought.ProductsMostlyBought()
@@ -1358,7 +1352,7 @@ def test31_performProductsMostlyBoughtLimitGreaterThanData(monkeypatch):
         analysis = ProductsMostlyBought.ProductsMostlyBought()
         ProductsMostlyBought.ProductsMostlyBought.perform(analysis, limit=5)
     
-    assert str(e.value) == "Limit is greater than the amount of products present"
+    assert str(e.value) == "Limit is greater than the amount of bought products present"
 
 def test32_performProductsMostlyBoughtLimitLessThanData(monkeypatch):
     '''
@@ -1569,7 +1563,7 @@ def test36_performRoutesAmountDataMultipleData(monkeypatch):
     monkeypatch.setattr(RoutesAmount.RoutesAmount, '_getRouteNameById', mock_getRouteNameById)
 
     analysis = RoutesAmount.RoutesAmount()
-    result = RoutesAmount.RoutesAmount.perform(analysis)
+    result = RoutesAmount.RoutesAmount.perform(analysis, limit=4)
 
     assert result == {"routes": {'route1': 2, 'route2': 2, 'route3': 2, 'route4': 2}, "typeofgraph": "bar"}
 
@@ -1613,7 +1607,7 @@ def test37_performRoutesAmountRouteNotFound(monkeypatch):
     analysis = RoutesAmount.RoutesAmount()
 
     with pytest.raises(Exception) as e:
-        RoutesAmount.RoutesAmount.perform(analysis, limit=4)
+        RoutesAmount.RoutesAmount.perform(analysis, limit=0)
 
     assert str(e.value) == "Route not found"
 
@@ -1701,4 +1695,4 @@ def test39_performRoutesAmountLimitGreaterThanData(monkeypatch):
         analysis = RoutesAmount.RoutesAmount()
         RoutesAmount.RoutesAmount.perform(analysis, limit=5)
 
-    assert str(e.value) == "Limit is greater than the amount of routes present"
+    assert str(e.value) == "Limit is greater than the amount of routes with orders are present"
