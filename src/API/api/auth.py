@@ -15,6 +15,10 @@ router = APIRouter()
 async def authenticate(email:str, password: str):
     return await crud.authenticate(email, password=password)
 
+@router.get(f"/{VERSION}/authenticate/isTokenValid", status_code=200)
+async def authenticate_token(token: str):
+    return is_token_valid(token)
+
 def generate_jwt_token(email:str):
     if getenv("JWT_SECRET_KEY") is None:
         secret = secrets.token_urlsafe(32)
