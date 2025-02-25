@@ -189,8 +189,7 @@ def test06_performCustomerSignupMonthlyGrowth(monkeypatch):
     analysis = CustomerSignup.CustomerSignup()
     result = CustomerSignup.CustomerSignup.perform(analysis, 0, False, True)
 
-    current_month = datetime.now().month
-    current_month = str(current_month).zfill(2)
+    current_month = datetime.now().strftime("%Y-%m")
 
     assert result == {'growth': {f'{current_month}' : 2}, 'cumulative_growth': {f'{current_month}': 2}, "typeofgraph": "line"}
 
@@ -756,7 +755,7 @@ def test21_performProductsMostlyBoughtLastDays(monkeypatch):
             "productId": 2,
             "orderId": 2,
             "productAmount": 10,
-            "orderDate": (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S.%f")
+            "orderDate": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.%f")
         },
         {
             "productId": 3,

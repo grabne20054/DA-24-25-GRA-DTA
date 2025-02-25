@@ -116,7 +116,8 @@ class OrdersAmount(DescriptiveAnalysis):
             df_cumulative_growth_filled.update(df_cumulative_growth)
 
             df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
-            df_cumulative_growth_filled.ffill( inplace=True)
+            df_cumulative_growth_filled.ffill(inplace=True)
+            df_cumulative_growth_filled.replace(pd.NA, 0, inplace=True)
 
             yearlygrowth = df_growth_filled.to_dict()['growth']
             cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
@@ -140,8 +141,9 @@ class OrdersAmount(DescriptiveAnalysis):
         total = 0
 
         for i in data:
-            if datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f").year == datetime.now().year:
-                month = i['orderDate'].split("-")[1]
+            order_date = datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f")
+            if order_date >= datetime.now() - timedelta(days=365):
+                month = order_date.strftime("%Y-%m")
                 monthlygrowth[month] += 1
                 total += 1
 
@@ -151,8 +153,8 @@ class OrdersAmount(DescriptiveAnalysis):
             df_growth = pd.DataFrame.from_dict(monthlygrowth, orient='index', columns=['growth'])
             df_cumulative_growth = pd.DataFrame.from_dict(cumulative_growth, orient='index', columns=['cumulative_growth'])
                 
-            full_date_range = pd.date_range(start=f"{datetime.now().year}-01-01", end=f"{datetime.now().year}-12-31", freq='ME')
-            month_index = full_date_range.strftime("%m")
+            full_date_range = pd.date_range(start=(datetime.now() - timedelta(days=365)), end=datetime.now() , freq='ME')
+            month_index = full_date_range.strftime("%Y-%m")
             
             df_growth_filled = df_growth.reindex(month_index, fill_value=0)
             df_growth_filled.index = df_growth_filled.index
@@ -164,7 +166,8 @@ class OrdersAmount(DescriptiveAnalysis):
 
             
             df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
-            df_cumulative_growth_filled.ffill( inplace=True)
+            df_cumulative_growth_filled.ffill(inplace=True)
+            df_cumulative_growth_filled.replace(pd.NA, 0, inplace=True)
 
             monthlygrowth = df_growth_filled.to_dict()['growth']
             cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
@@ -222,6 +225,7 @@ class OrdersAmount(DescriptiveAnalysis):
 
             df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
             df_cumulative_growth_filled.ffill(inplace=True)
+            df_cumulative_growth_filled.replace(pd.NA, 0, inplace=True)
 
             if last_days > 0:
                 growth = df_growth_filled['growth'].iloc[-last_days:].to_dict()
