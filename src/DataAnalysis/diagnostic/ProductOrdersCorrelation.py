@@ -135,7 +135,7 @@ class ProductOrdersCorrelation(DiagnosticAnalysis):
 
         Example:
 
-        getChangingPriceOrdersCorrValue(0.1, 0) will return the correlation value between productAmount and price if all prices are decreased by 10%
+        getChangingPriceOrdersCorrValue(0.1, 0) will return the correlation value between productAmount and price if all prices are decreased by 90%
         getChangingPriceOrdersCorrValue(1.1, 5) will return the correlation value between productAmount and price if 5 random prices are increased by 10%
 
         Returns:
