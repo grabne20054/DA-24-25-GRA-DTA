@@ -161,7 +161,7 @@ class CustomerSignup(DescriptiveAnalysis):
             df_cumulative_growth = pd.DataFrame.from_dict(cumulative_growth, orient='index', columns=['cumulative_growth'])
                 
             full_date_range = pd.date_range(start=(datetime.now() - timedelta(days=365)), end=datetime.now() , freq='ME')
-            month_index = full_date_range.strftime("%m")
+            month_index = full_date_range.strftime("%Y-%m")
             
             df_growth_filled = df_growth.reindex(month_index, fill_value=0)
             df_growth_filled.index = df_growth_filled.index

@@ -83,9 +83,9 @@ class DataPredictor:
 
     def _to_datetime_timestamp(self, date):
         if isinstance(date, str):
-            if len(date) == 2:
-                dt = datetime.strptime(date, "%m")
-                dt = datetime(datetime.now().year, dt.month, 1)
+            if len(date) == 7:
+                dt = datetime.strptime(date, "%Y-%m")
+                dt = datetime(dt.year, dt.month, 1)
             elif len(date) == 4:
                 dt = datetime.strptime(date, "%Y")
                 dt = datetime(dt.year, 1, 1)
@@ -149,6 +149,7 @@ class DataPredictor:
             elif option == "month":
                 amount_historical_data = OPTIONS[option]["sequence_lenght"] + OPTIONS[option]["rolling_mean"]
                 X_data = data_source.perform(month=True, showzeros=True)
+                print(X_data)
                 analysis = list(X_data.keys())[index]
                 X_data = X_data[analysis]
                 X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], amount_historical_data=amount_historical_data, growthtype=growthtype)
