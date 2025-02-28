@@ -41,16 +41,15 @@ async def get_employees_amount(token: Annotated[str, Depends(is_token_valid)]):
         raise HTTPException(status_code=404, detail=str(e))
 
 @router.get(f"/{VERSION}/{DESCRIPTIVE}/products-amount/", status_code=210)
-async def get_products_amount(token: Annotated[str, Depends(is_token_valid) ], limit: int = 5):
+async def get_products_amount(token: Annotated[str, Depends(is_token_valid) ], limit: int = 5, well_stocked: bool = False, out_of_stock: bool = False):
     try:
-        data = await crud.get_products_amount(limit=limit)
+        data = await crud.get_products_amount(limit=limit, well_stocked=well_stocked, out_of_stock=out_of_stock)
         return data
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
-    
-# TODO: orderDate
+
 @router.get(f"/{VERSION}/{DESCRIPTIVE}/products-mostly-bought/", status_code=210)
-async def get_products_mostly_bought(token: Annotated[str, Depends(is_token_valid)], last_days: int = None, month: bool = False, year: bool = False, limit: int = 5):
+async def get_products_mostly_bought(token: Annotated[str, Depends(is_token_valid)], last_days: int = 0, month: bool = False, year: bool = False, limit: int = 5):
     try:
         data = await crud.get_products_mostly_bought(last_days=last_days, month=month, year=year, limit=limit)
         return data

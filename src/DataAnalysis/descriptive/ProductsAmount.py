@@ -31,7 +31,7 @@ class ProductsAmount(DescriptiveAnalysis):
         except Exception as e:
             print("Error: ", e)
     
-    def perform(self, limit: int) -> dict:
+    def perform(self, limit: int, well_stocked: bool = False, out_of_stock: bool = False) -> dict:
         """
         Perform the analysis
 
@@ -64,9 +64,24 @@ class ProductsAmount(DescriptiveAnalysis):
         for i in data:    
             products[i['name']] = i['stock']
 
-        products = dict(sorted(products.items(), key=lambda item: item[1], reverse=True)[:limit])
+        if well_stocked:
+            products_res = dict(sorted(products.items(), key=lambda item: item[1], reverse=True)[:limit])
+        elif out_of_stock:
+            products_res = dict(sorted(products.items(), key=lambda item: item[1])[:limit])
+        else:
+            print("Hello there")
+            products_res = dict(sorted(products.items(), key=lambda item: item[1], reverse=True))
 
-        return { "products" : products, "typeofgraph" : TYPEOFGRAPH }
+            if limit % 2 == 0:
+                upper_bound = limit // 2
+                lower_bound = limit // 2
+            else:
+                upper_bound = limit // 2 + 1
+                lower_bound = limit // 2
+
+            products_res = dict(list(products_res.items())[:upper_bound] + list(products_res.items())[-lower_bound:])
+
+        return { "products" : products_res, "typeofgraph" : TYPEOFGRAPH }
 
 
 
