@@ -35,7 +35,6 @@ class ItemBoughtCorrelation(DiagnosticAnalysis):
             print("Error: ", e)
             return None, None, None
 
-        # convert to dataframes
         df_orders = pd.DataFrame(orders)
         df_ordersProducts = pd.DataFrame(ordersProducts)
         df_products = pd.DataFrame(products)

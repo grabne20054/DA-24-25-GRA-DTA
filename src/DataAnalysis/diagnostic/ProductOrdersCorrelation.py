@@ -75,7 +75,6 @@ class ProductOrdersCorrelation(DiagnosticAnalysis):
             return None
         
 
-        # List of columns to be dropped
         columns_to_drop = [
             'orderId', 'productId', 'addressId', 'customerId', 'description', 
             'deliveryDate', 'stock', 'imagePath', 'lastname', 'firstname', 

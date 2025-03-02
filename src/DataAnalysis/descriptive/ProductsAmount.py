@@ -69,7 +69,6 @@ class ProductsAmount(DescriptiveAnalysis):
         elif out_of_stock:
             products_res = dict(sorted(products.items(), key=lambda item: item[1])[:limit])
         else:
-            print("Hello there")
             products_res = dict(sorted(products.items(), key=lambda item: item[1], reverse=True))
 
             if limit % 2 == 0:

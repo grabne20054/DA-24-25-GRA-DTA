@@ -149,10 +149,10 @@ class CustomerSignup(DescriptiveAnalysis):
         total = 0
 
         for i in data:
-            order_date = datetime.strptime(i['signedUp'], "%Y-%m-%dT%H:%M:%S.%f")
-            month = order_date.strftime("%Y-%m")
+            signed_up = datetime.strptime(i['signedUp'], "%Y-%m-%dT%H:%M:%S.%f")
+            month = signed_up.strftime("%Y-%m")
 
-            if order_date <= datetime.now():
+            if signed_up <= datetime.now():
                 total += 1
                 cumulative_growth[month] = total
                 

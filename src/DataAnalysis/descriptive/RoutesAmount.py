@@ -119,6 +119,5 @@ class RoutesAmount(DescriptiveAnalysis):
                 seen.add(uuid)
             else:
                 continue
-
-        print(len(seen))
+            
         return len(seen)
