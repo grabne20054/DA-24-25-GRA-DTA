@@ -105,14 +105,8 @@ class DataPredictor:
         if self.scaler_y is None:
             raise Exception("Scaler y not loaded")
 
-        if data_analysis == "CumulativeCustomerGrowth":
-            growth = GrowthModel("CumulativeCustomerGrowth", "cumulative_growth", data_source=CustomerSignup())
-            X_test = self._getHistoricalData(option, growth.data_source, growth.growthtype)
-        elif data_analysis == "CustomerGrowth":
+        if data_analysis == "CustomerGrowth":
             growth = GrowthModel("CustomerGrowth", "growth", data_source=CustomerSignup())
-            X_test = self._getHistoricalData(option, growth.data_source, growth.growthtype)
-        elif data_analysis == "CumulativeOrdersGrowth":
-            growth = GrowthModel("CumulativeOrdersGrowth", "cumulative_growth", data_source=OrdersAmount())
             X_test = self._getHistoricalData(option, growth.data_source, growth.growthtype)
         elif data_analysis == "OrdersGrowth":
             growth = GrowthModel("OrdersGrowth", "growth", data_source=OrdersAmount())
@@ -139,31 +133,31 @@ class DataPredictor:
                 X_data = data_source.perform(last_days=amount_historical_data, showzeros=True)
                 analysis = list(X_data.keys())[index]
                 X_data = X_data[analysis]
-                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], amount_historical_data=amount_historical_data, growthtype=growthtype)
+                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], growthtype=growthtype)
             elif option == "seven_days":
                 amount_historical_data = 2 * OPTIONS[option]["sequence_lenght"] + max(OPTIONS[option]["rolling_mean"], OPTIONS[option]["lag"]) + OPTIONS[option]["rolling_mean"]
                 X_data = data_source.perform(last_days=amount_historical_data, showzeros=True)
                 analysis = list(X_data.keys())[0]
                 X_data = X_data[analysis]
-                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], amount_historical_data=amount_historical_data, growthtype=growthtype)
+                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], growthtype=growthtype)
             elif option == "month":
                 amount_historical_data = OPTIONS[option]["sequence_lenght"] + OPTIONS[option]["rolling_mean"]
                 X_data = data_source.perform(month=True, showzeros=True)
                 print(X_data)
                 analysis = list(X_data.keys())[index]
                 X_data = X_data[analysis]
-                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], amount_historical_data=amount_historical_data, growthtype=growthtype)
+                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], growthtype=growthtype)
             elif option == "year":
                 amount_historical_data = OPTIONS[option]["sequence_lenght"] + OPTIONS[option]["rolling_mean"]
                 X_data = data_source.perform(year=True, showzeros=True)
                 analysis = list(X_data.keys())[index]
                 X_data = X_data[analysis]
-                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], amount_historical_data=amount_historical_data, growthtype=growthtype)
+                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], growthtype=growthtype)
             return X_data
         except Exception as e:
             raise Exception(f"Failed to get historical data: {e}")
         
-    def _prepare_test_data(self, X_test_raw, lag, rolling_mean, amount_historical_data: int, growthtype:str):
+    def _prepare_test_data(self, X_test_raw, lag, rolling_mean, growthtype:str):
         try:
             print(X_test_raw)
             X = np.array([self._to_datetime_timestamp(key) for key in X_test_raw])

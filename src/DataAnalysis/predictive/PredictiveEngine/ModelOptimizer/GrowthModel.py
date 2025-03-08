@@ -26,11 +26,12 @@ from math import isnan
 import pickle
 
 MODEL_DIR = '/models/'
+TYPEOFGRAPH = "line"
 
 load_dotenv()
 
 class GrowthModel(PredictiveAnalysis):
-    def __init__(self, data_analysis: str, growthtype: Literal['growth', 'cumulative_growth'], data_source: OrdersAmount | CustomerSignup ) -> None:
+    def __init__(self, data_analysis: str, growthtype: Literal['growth'], data_source: OrdersAmount | CustomerSignup ) -> None:
         self.data_source = data_source
         self.growthtype = growthtype
         self.data_analysis = data_analysis
@@ -57,6 +58,8 @@ class GrowthModel(PredictiveAnalysis):
         
     def provide_data_to_perform(self, lag, rolling_mean, sequence_length, month: bool = False, year: bool = False):
         X_train, X_test, y_train, y_test = self._train_test_split(lag, rolling_mean, month, year)
+        if len(X_train) == 0 or len(X_test) == 0 or len(y_train) == 0 or len(y_test) == 0:
+            raise ValueError("Not enough data to perform the operation.")
         X_train, X_test, scaler_x = self._normalize_X(X_train, X_test)
         y_train, y_test, scaler_y = self._normalize_y(y_train, y_test)
         X_train, y_train, X_test, y_test = self._create_sequences(X_train, y_train, X_test, y_test, sequence_length)
@@ -107,9 +110,9 @@ class GrowthModel(PredictiveAnalysis):
 
     def _to_datetime_timestamp(self, date):
         if isinstance(date, str):
-            if len(date) == 2:
-                dt = datetime.strptime(date, "%m")
-                dt = datetime(datetime.now().year, dt.month, 1)
+            if len(date) == 7:
+                dt = datetime.strptime(date, "%Y-%m")
+                dt = datetime(dt.year, dt.month, 1)
             elif len(date) == 4:
                 dt = datetime.strptime(date, "%Y")
                 dt = datetime(dt.year, 1, 1)
@@ -128,7 +131,7 @@ class GrowthModel(PredictiveAnalysis):
     
     def _train_test_split(self, lag, rolling_mean, month: bool = False, year: bool = False):
         X, y = self._prepare_data(lag, rolling_mean, month, year)
-        return train_test_split(X, y, test_size=0.5, random_state=0, shuffle=False)
+        return train_test_split(X, y, test_size=0.3, random_state=0, shuffle=False)
     
     def _normalize_X(self, X_train, X_test):
         if len(X_train) == 0 or len(X_test) == 0:
@@ -186,7 +189,6 @@ class GrowthModel(PredictiveAnalysis):
             X_test = X_test.reshape(X_test.shape[0], -1)
         return X_train, X_test
 
-
     def find_best_params(self, lag, rolling_mean, sequence_length, month: bool = False, year: bool = False):
         X_train, X_test, y_train, y_test, scaler_X, scaler_y = self.provide_data_to_perform(lag, rolling_mean, sequence_length, month, year)
 
@@ -194,7 +196,7 @@ class GrowthModel(PredictiveAnalysis):
         for num_units in [120]:
             for dropout in [0.1]:
                 for learning_rate in [1e-5]:
-                    for epoch in [500]:
+                    for epoch in [10]:
                         for l2_reg in [1e-4]:
 
                             print('Running with', num_units, 
@@ -270,7 +272,7 @@ class GrowthModel(PredictiveAnalysis):
 
         mlflow.end_run()
 
-    def perform(self, lag, rolling_mean, sequence_length, month: bool = False, year: bool = False):
+    def perform(self, lag, rolling_mean, sequence_length, month, year):
             self.find_best_params(lag=lag, rolling_mean=rolling_mean, sequence_length=sequence_length, month=month, year=year)
 
     # TODO scaler log, refactor...
@@ -282,7 +284,7 @@ class GrowthModel(PredictiveAnalysis):
 
         return X_test, pipeline
 
-
+    @tf.function(reduce_retracing=True)
     def predict(self, X_test_raw, model, scaler_y, scaler_X, lag, rolling_mean, sequence_length, option:str):
         X_test, _ = self._normalize_X_test(X_test_raw, scaler_X)
         X_test_seq = []
@@ -300,17 +302,19 @@ class GrowthModel(PredictiveAnalysis):
             y_pred_list[i] = y_pred_list[i][0]
 
         if option == "one_day":
-            return {(datetime.now() + timedelta(days=1)).isoformat().split("T")[0] :  y_pred_list[0]}
+            pred_list = {(datetime.now() + timedelta(days=1)).isoformat().split("T")[0] :  y_pred_list[0]}
         elif option == "seven_days":
             res = {}
             seven_days = [datetime.now() + timedelta(days=i+1) for i in range(7)]
             for i in seven_days:
                 res[i.isoformat().split("T")[0]] = y_pred_list[seven_days.index(i)]
-            return res
+            pred_list = res
         elif option == "month":
-            return {str(datetime.now().month + 1).zfill(2) :  y_pred_list[0]}
+            pred_list = {datetime.now().strftime("%Y-%m") :  y_pred_list[0]}
         elif option == "year":
-            return {datetime.now().year + 1 :  y_pred_list[0]}
+            pred_list = {datetime.now().year :  y_pred_list[0]}
+        
+        return {"predictions": pred_list, "typeofgraph": TYPEOFGRAPH}
         
             
 
@@ -322,8 +326,3 @@ class GrowthModel(PredictiveAnalysis):
 
     def report():
         pass
-
-
-if __name__ == "__main__":
-    customerGrowth = GrowthModel("CustomerGrowth", "growth", data_source=CustomerSignup())
-    customerGrowth.perform()

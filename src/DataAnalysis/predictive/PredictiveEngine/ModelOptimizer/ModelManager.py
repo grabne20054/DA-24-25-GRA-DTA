@@ -4,7 +4,7 @@ from os import getenv
 from dotenv import load_dotenv
 load_dotenv()
 
-OPTIONS = {"one_day": {"lag": 2, "sequence_lenght": 5, "rolling_mean": 3}, "seven_days": {"lag": 3, "sequence_lenght": 7, "rolling_mean": 7}, "month": {"lag": 2, "sequence_lenght": 2, "rolling_mean": 3}, "year": {"lag": 1, "sequence_lenght": 1, "rolling_mean": 2}}
+OPTIONS = {"one_day": {"lag": 7, "sequence_lenght": 7, "rolling_mean": 3}, "seven_days": {"lag": 14, "sequence_lenght": 7, "rolling_mean": 7}, "month": {"lag": 6, "sequence_lenght": 1, "rolling_mean": 3}, "year": {"lag": 1, "sequence_lenght": 1, "rolling_mean": 1}}
 
 class ModelManager:
     def __init__(self):
