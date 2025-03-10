@@ -135,7 +135,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         products_bought = {}
         seen = set()
         for i in data:
-            if datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f").month == self._getCurrentMonth():
+            if datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f").month == self._getCurrentMonth() and datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f").year == datetime.now().year:
                 if i['productId'] not in seen:
                     products_bought[i['productId']] = i['productAmount']
                     seen.add(i['productId'])
