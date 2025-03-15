@@ -50,7 +50,7 @@ class ItemBoughtCorrelation(DiagnosticAnalysis):
             combination_product_amount (int, optional): Amount of products to combine. Defaults to 2.
             
             Returns:
-                dict: Dictionary containing the products      
+                list: list containing the products      
         """
 
         if combination_product_amount < 1:
@@ -68,10 +68,9 @@ class ItemBoughtCorrelation(DiagnosticAnalysis):
         except Exception as e:
             raise Exception("Error in merging dataframes")
         
-        columns_to_drop = ['description', 'deliveryDate', 'deleted_x', 'customerReference', 'imagePath', 'deleted_y', 'stock', 'orderDate', 'name', 'price', 'productAmount']
+        columns_to_drop = ['description', 'deliveryDate', 'deleted_x', 'customerReference', 'imagePath', 'deleted_y', 'stock', 'orderDate', 'name', 'price', 'productAmount', 'selfCollect', 'orderDate_x', 'orderDate_y', 'createdAt', 'orderState']
         
-        df_orders = df_orders.drop(columns=df_orders.columns.intersection(columns_to_drop))#
-
+        df_orders = df_orders.drop(columns=df_orders.columns.intersection(columns_to_drop))
         
         if combination_product_amount > len(df_orders['productId'].unique()):
             raise ValueError("Too many products to combine")
