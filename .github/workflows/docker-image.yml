@@ -3,6 +3,7 @@ name: Build and Push DTA-API and Predictive Engine
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
