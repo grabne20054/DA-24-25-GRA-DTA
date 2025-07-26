@@ -29,6 +29,7 @@ jobs:
         file: ./src/API/Dockerfile
         push: true
         pull: true
+        platforms: linux/arm64
         tags: |
           mgrabner18/dta-api:latest
           mgrabner18/dta-api:${{ github.sha }}
@@ -40,6 +41,7 @@ jobs:
         file: ./src/DataAnalysis/predictive/PredictiveEngine/DataPredictor/Dockerfile
         push: true
         pull: true
+        platforms: linux/arm64
         tags: |
           mgrabner18/predictive-engine:latest
           mgrabner18/predictive-engine:${{ github.sha }}
