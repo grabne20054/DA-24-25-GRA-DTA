@@ -36,7 +36,7 @@ jobs:
     - name: Build and push PredictiveEngine
       uses: docker/build-push-action@v5
       with:
-        context: ./src/DataAnalysis/predictive/PredictiveEngine/DataPredictor
+        context: ./src/DataAnalysis/predictive/
         file: ./src/DataAnalysis/predictive/PredictiveEngine/DataPredictor/Dockerfile
         push: true
         pull: true
