@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 # copy requirements file
-COPY ./requirements.txt /usr/src/API/requirements.txt
+COPY ./API/requirements.txt /usr/src/API/requirements.txt
 
 # install dependencies
 RUN set -eux \
