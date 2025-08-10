@@ -25,7 +25,7 @@ jobs:
     - name: Build and push DTA-API
       uses: docker/build-push-action@v5
       with:
-        context: ./src/API
+        context: ./src/
         file: ./src/API/Dockerfile
         push: true
         pull: true
