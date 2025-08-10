@@ -25,10 +25,12 @@ RUN set -eux \
     && pip install -r /usr/src/API/requirements.txt \
     && rm -rf /var/lib/apt/lists/* /root/.cache/pip
 
-
+EXPOSE 8000
 
 # copy project
 COPY . /usr/src/API/
 
 # set PYTHONPATH
 ENV PYTHONPATH=/usr/src
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
