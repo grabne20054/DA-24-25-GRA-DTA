@@ -33,4 +33,4 @@ COPY . /usr/src/API/
 # set PYTHONPATH
 ENV PYTHONPATH=/usr/src
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "api.main:app", "--reload", "--workers", "1", "--host", "0.0.0.0", "--port", "8000"]
