@@ -28,7 +28,8 @@ RUN set -eux \
 EXPOSE 8000
 
 # copy project
-COPY . /usr/src/API/
+COPY DataAnalysis /usr/src/DataAnalysis
+COPY API /usr/src/DataAnalysis
 
 # set PYTHONPATH
 ENV PYTHONPATH=/usr/src
