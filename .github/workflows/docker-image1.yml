@@ -1,0 +1,40 @@
+name: Docker Run & Check Logs
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  docker-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t test-image .
+
+      - name: Run container, check logs & HTTP
+        run: |
+          docker run --name test-run -d -p 8000:8000 test-image
+
+          sleep 20
+
+          echo "===== Container Logs ====="
+          docker logs test-run
+
+          STATUS=$(docker inspect test-run --format='{{.State.ExitCode}}')
+          if [ "$STATUS" != "0" ]; then
+            echo "Container exited with code $STATUS"
+            exit 1
+          fi
+          
+          echo "===== Testing HTTP endpoint ====="
+          if ! curl -f http://localhost:8000/docs; then
+            echo "HTTP check failed"
+            exit 1
+          fi
+
+          docker stop fastapi-test || true
