@@ -37,4 +37,4 @@ jobs:
             exit 1
           fi
 
-          docker stop fastapi-test || true
+          docker stop test-run || true
