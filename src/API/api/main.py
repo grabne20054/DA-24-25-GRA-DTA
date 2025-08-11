@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-import descriptive, diagnostic, predictive, auth
+from api import descriptive, diagnostic, predictive, auth
 
 
 
