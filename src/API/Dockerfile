@@ -34,4 +34,4 @@ COPY API /usr/src/DataAnalysis
 # set PYTHONPATH
 ENV PYTHONPATH=/usr/src
 
-CMD ["uvicorn", "api.main:app", "--reload", "--workers", "1", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "API.api.main:app", "--reload", "--workers", "1", "--host", "0.0.0.0", "--port", "8000"]
