@@ -29,6 +29,7 @@ jobs:
         file: ./src/API/Dockerfile
         push: true
         pull: true
+        platforms: linux/arm64
         tags: mgrabner18/dta-api:latest
 
     - name: Build and push PredictiveEngine
