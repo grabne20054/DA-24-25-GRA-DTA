@@ -131,7 +131,13 @@ async def authenticate(email:str, password: str):
         raise HTTPException(status_code=400, detail="Error connecting to the database")
     if len(response) == 0:
         raise HTTPException(status_code=401, detail="Wrong credentials")
-    if response[0]['role'] == 'admin':
-        return generate_jwt_token(email=email)
-    else:
-        raise HTTPException(status_code=401, detail="Not authorized")
+    try:
+        if response[0]['role'] == 'admin':
+            return generate_jwt_token(email=email)
+    except KeyError:
+        response = requests.get(f"{getenv('APIURL')}/roles/name/ADMIN")
+        response = response.json()
+        if len(response) == 0:
+            raise HTTPException(status_code=401, detail="Not authorized")
+        elif response['name'] == 'ADMIN':
+            return generate_jwt_token(email=email)
