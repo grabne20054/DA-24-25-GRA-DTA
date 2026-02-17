@@ -109,7 +109,7 @@ class ProductOrdersCorrelation(DiagnosticAnalysis):
         self.merge()
         if self.df_ordersProducts is None:
             raise Exception("No data found")
-        price_correlation = self.df_ordersProducts[['productAmount','price']].corr('pearson')
+        price_correlation = self.df_ordersProducts[['productAmount','price']].corr('spearman')
         date_correlation = self.df_ordersProducts[['productAmount','orderDate']].corr('spearman')
         user_correlation = self.df_ordersProducts[['productAmount','businessSector']].corr('spearman')
 

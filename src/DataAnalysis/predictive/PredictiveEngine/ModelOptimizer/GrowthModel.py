@@ -137,7 +137,6 @@ class GrowthModel(PredictiveAnalysis):
         if len(X_train) == 0 or len(X_test) == 0:
             raise ValueError("Training or testing data is empty.")
     
-        # explain
         pipeline = Pipeline([
             ('robust_scaler', RobustScaler()),
             ('std_scaler', StandardScaler())
@@ -191,6 +190,8 @@ class GrowthModel(PredictiveAnalysis):
 
     def find_best_params(self, lag, rolling_mean, sequence_length, month: bool = False, year: bool = False):
         X_train, X_test, y_train, y_test, scaler_X, scaler_y = self.provide_data_to_perform(lag, rolling_mean, sequence_length, month, year)
+
+        print(X_train.shape)
 
         results = {}
         for num_units in [120]:

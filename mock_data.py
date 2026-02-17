@@ -172,11 +172,31 @@ def postRoutesOrders():
     sleep(2)
             
 
+def postManyEmployees():
+    for i in range(0, 100):
+        employee = {
+            "firstName": f"firstName{i}",
+            "lastName": f"lastName{i}",
+            "password": f"password{i}",
+            "email": f"email{i}",
+            "role": "admin",
+            "deleted": False
+        }
+
+        employee["role"] = ["admin", "employee", "supplier"][randint(0, 2)]
+
+        res = requests.post(API_URL +"/employess", json=employee)
+        print(res.text)
+        print(res)
+    sleep(2)
+
+
 if __name__ == "__main__":
-    postAdressMockData() #0
+    postManyEmployees()
+    """postAdressMockData() #0
     customerSignupMockData() #1
     postManyProducts() #2
     postManyOrders() #3
     postManyProductOrders() #4
     postManyRoutes() #5
-    postRoutesOrders() #6
+    postRoutesOrders() #6"""

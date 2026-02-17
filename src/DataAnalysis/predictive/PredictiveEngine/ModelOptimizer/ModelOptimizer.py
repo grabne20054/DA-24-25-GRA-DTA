@@ -14,22 +14,21 @@ class ModelOptimizer:
     def __init__(self):
         self.customerGrowth = GrowthModel("CustomerGrowth", "growth", data_source=CustomerSignup())
         self.ordersGrowth = GrowthModel("OrdersGrowth", "growth", data_source=OrdersAmount())
-        self.model_manager = ModelManager()
 
     
     def spawn_optimizer(self):
-        config = []
         month = False
         year = False
 
         for option_key in OPTIONS.keys():
             for model in [self.customerGrowth, self.ordersGrowth]:
-                config.append((model.data_analysis, model.growthtype, option_key))
                 if option_key == "month":
                     month = True
                 elif option_key == "year":
                     year = True
-                t = Thread(target=model.perform, args=(OPTIONS[option_key]["lag"], OPTIONS[option_key]["rolling_mean"], OPTIONS[option_key]["sequence_lenght"], month, year))
+                t = Thread(target=model.perform, args=(OPTIONS[option_key]["lag"],
+                                                        OPTIONS[option_key]["rolling_mean"],
+                                                          OPTIONS[option_key]["sequence_lenght"], month, year))
                 t.start()
                 print("Spawned thread for ", model, " with option ", option_key)
                 month = False
@@ -40,6 +39,7 @@ if __name__ == "__main__":
     while True:
         try:
             ModelOptimizer().spawn_optimizer()
-            time.sleep(60*60*24)
         except Exception as e:
             print(f"Error occured: {e}")
+        finally:
+            time.sleep(60 * 60 * 24)
