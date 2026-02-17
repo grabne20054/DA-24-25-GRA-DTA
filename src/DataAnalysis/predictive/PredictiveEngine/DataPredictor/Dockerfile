@@ -10,7 +10,7 @@ ENV PYTHONPATH=/app
 WORKDIR /app
 
 
-COPY predictive/requirements.txt predictive/requirements.txt
+COPY ./requirements.txt predictive/requirements.txt
 
 # Install dependencies
 RUN pip install -r predictive/requirements.txt

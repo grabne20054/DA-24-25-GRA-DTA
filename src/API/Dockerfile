@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 # copy requirements file
-COPY ./requirements.txt /usr/src/API/requirements.txt
+COPY ./API/requirements.txt /usr/src/API/requirements.txt
 
 # install dependencies
 RUN set -eux \
@@ -25,10 +25,13 @@ RUN set -eux \
     && pip install -r /usr/src/API/requirements.txt \
     && rm -rf /var/lib/apt/lists/* /root/.cache/pip
 
-
+EXPOSE 8000
 
 # copy project
-COPY . /usr/src/API/
+COPY DataAnalysis /usr/src/DataAnalysis
+COPY API /usr/src/API
 
 # set PYTHONPATH
 ENV PYTHONPATH=/usr/src
+
+CMD ["uvicorn", "API.api.main:app", "--reload", "--workers", "1", "--host", "0.0.0.0", "--port", "8000"]

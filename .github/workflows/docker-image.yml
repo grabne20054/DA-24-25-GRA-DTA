@@ -1,0 +1,43 @@
+name: Build and Push DTA-API and Predictive Engine
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push DTA-API
+      uses: docker/build-push-action@v5
+      with:
+        context: ./src/
+        file: ./src/API/Dockerfile
+        push: true
+        pull: true
+        platforms: linux/arm64,linux/amd64
+        tags: mgrabner18/dta-api:latest
+
+    - name: Build and push PredictiveEngine
+      uses: docker/build-push-action@v5
+      with:
+        context: ./src/DataAnalysis/predictive/
+        file: ./src/DataAnalysis/predictive/PredictiveEngine/DataPredictor/Dockerfile
+        push: true
+        pull: true
+        platforms: linux/arm64,linux/amd64
+        tags: mgrabner18/predictive-engine:latest
