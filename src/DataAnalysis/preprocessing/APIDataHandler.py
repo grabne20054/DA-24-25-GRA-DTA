@@ -10,7 +10,7 @@ class APIDataHandler:
     Class to handle API data
     """
     def __init__(self, url):
-        self.url = url + "?token=" + getenv("API_KEY")
+        self.url = url + "/?token=" + getenv("API_KEY")
 
     def fetch(self) -> list:
         """
