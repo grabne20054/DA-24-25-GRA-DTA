@@ -126,12 +126,9 @@ async def get_cumulative_orders_growth(one_day: bool = False, seven_days: bool =
 
 async def authenticate(email:str, password: str):
     try:
-        response = requests.get(f"{getenv('APIURL')}/employees/?email={email}&token={getenv('API_KEY')}")
+        response = requests.get(f"{getenv('APIURL')}/employees/?email={email}&password={password}&token={getenv('API_KEY')}")
         response = response.json()
         if len(response) == 0:
-            raise HTTPException(status_code=401, detail="Wrong credentials")
-        password_from_db = response['password']
-        if not bcrypt.checkpw(password.encode(), password_from_db.encode()):
             raise HTTPException(status_code=401, detail="Wrong credentials")
     except ConnectionError as e:
         raise HTTPException(status_code=400, detail="Error connecting to the database")
