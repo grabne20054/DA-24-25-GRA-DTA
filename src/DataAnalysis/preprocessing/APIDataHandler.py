@@ -1,14 +1,16 @@
 import requests, json
 from DataAnalysis.preprocessing.REMOVINGS import REMOVINGS
+from os import getenv
+from dotenv import load_dotenv
 
-
+load_dotenv()
 
 class APIDataHandler:
     """
     Class to handle API data
     """
     def __init__(self, url):
-        self.url = url
+        self.url = url + "?token=" + getenv("API_KEY")
 
     def fetch(self) -> list:
         """

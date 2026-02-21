@@ -126,7 +126,7 @@ async def get_cumulative_orders_growth(one_day: bool = False, seven_days: bool =
 
 async def authenticate(email:str, password: str):
     try:
-        response = requests.get(f"{getenv('APIURL')}/employees/?email={email}")
+        response = requests.get(f"{getenv('APIURL')}/employees/?email={email}&token={getenv('API_KEY')}")
         response = response.json()
         if len(response) == 0:
             raise HTTPException(status_code=401, detail="Wrong credentials")
@@ -141,7 +141,7 @@ async def authenticate(email:str, password: str):
         if response[0]['role'] == 'admin':
             return generate_jwt_token(email=email)
     except KeyError:
-        response = requests.get(f"{getenv('APIURL')}/roles/name/ADMIN/")
+        response = requests.get(f"{getenv('APIURL')}/roles/name/ADMIN/?token={getenv('API_KEY')}")
         response = response.json()
         if len(response) == 0:
             raise HTTPException(status_code=401, detail="Not authorized")
