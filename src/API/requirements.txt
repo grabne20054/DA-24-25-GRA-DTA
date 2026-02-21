@@ -7,12 +7,13 @@ httpx~=0.26.0
 
 # auth
 pyjwt~=2.10.1
+bcrypt~=4.0.1
 
 # Data Analysis
 requests~=2.32.3
 python-dotenv~=1.0.1
-tensorflow>=2.14.0,<=2.15.0 
-keras>=2.14.0,<2.16  
+tensorflow>=2.14.0,<=2.15.0
+keras>=2.14.0,<2.16
 keras_applications==1.0.8
 numpy>=1.23.5,<2.0.0
 mlflow==2.19.0  
