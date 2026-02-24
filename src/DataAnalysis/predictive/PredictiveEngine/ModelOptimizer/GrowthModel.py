@@ -285,7 +285,6 @@ class GrowthModel(PredictiveAnalysis):
 
         return X_test, pipeline
 
-    @tf.function(reduce_retracing=True)
     def predict(self, X_test_raw, model, scaler_y, scaler_X, lag, rolling_mean, sequence_length, option:str):
         X_test, _ = self._normalize_X_test(X_test_raw, scaler_X)
         X_test_seq = []
