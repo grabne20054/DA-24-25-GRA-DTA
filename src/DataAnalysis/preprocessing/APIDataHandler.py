@@ -1,4 +1,4 @@
-import requests, json
+import requests, json, datetime
 from DataAnalysis.preprocessing.REMOVINGS import REMOVINGS
 from os import getenv
 from dotenv import load_dotenv
@@ -65,7 +65,6 @@ class APIDataHandler:
             for key in list(i.keys()):
                     if isinstance(i[key], str):
                         i[key] = str(i[key]).lower()
-
         return data
     
     def removeDuplicates(self) -> list:
@@ -102,6 +101,23 @@ class APIDataHandler:
                 if isinstance(i[key], str):
                     i[key] = str(i[key]).replace(" ", "")
         return data
+    
+    def normalizeDates(self) -> list:
+        """
+        Normalizes dates to a standard format (YYYY-MM-DD)
+
+        Returns:
+            list: List of dictionaries containing the clean data
+        """
+        data = self.removeAllWhitespaces()
+
+        for i in data:
+            for key in list(i.keys()):
+                if self._parseDate(i[key]):
+                    i[key] = str(i[key]).replace("Z", "+00:00")
+                    i[key] = datetime.datetime.fromisoformat(i[key])
+
+        return data
 
     def start(self) -> list:
         """
@@ -110,11 +126,20 @@ class APIDataHandler:
         Returns:
             list: List of dictionaries containing the clean data, invokes whole preprocessing pipeline
         """
-        return self.removeAllWhitespaces()          
-                        
+        return self.normalizeDates()
 
-                    
-        
-            
+    def _parseDate(self, date_str: str) -> bool:
+        """
+        Parses a date string and checks if it is in a valid format
 
-           
+        Args:
+            date_str (str): The date string to parse
+
+        Returns:
+            bool: True if the date is valid, False otherwise
+        """
+        try:
+            datetime.datetime.fromisoformat(date_str)
+            return True
+        except Exception:
+            return False

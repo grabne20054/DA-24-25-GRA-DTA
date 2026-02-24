@@ -67,7 +67,7 @@ async def get_orders_amount(token: Annotated[str, Depends(is_token_valid)], last
         else:
             raise HTTPException(status_code=400, detail=str(e))
 
-@router.get(f"/{VERSION}/{DESCRIPTIVE}/employees-amount/", status_code=210)
+@router.get(f"/{VERSION}/{DESCRIPTIVE}/employees-amount/", status_code=210, deprecated=True)
 async def get_employees_amount(token: Annotated[str, Depends(is_token_valid)]):
     """
     Get the amount of employees in the company.

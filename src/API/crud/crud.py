@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 from os import getenv
 import requests
 from datetime import datetime, timedelta
-import bcrypt
 load_dotenv()
 
 

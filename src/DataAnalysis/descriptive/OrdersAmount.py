@@ -57,7 +57,7 @@ class OrdersAmount(DescriptiveAnalysis):
             raise Exception("No data found")
 
         try:
-            data.sort(key=lambda i: datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f")) # Sort by signedUp date
+            data.sort(key=lambda i: i['orderDate']) # Sort by orderDate
         except AttributeError as e:
             print("Attribute Error: ", e)
             return None
@@ -92,36 +92,44 @@ class OrdersAmount(DescriptiveAnalysis):
         cumulative_growth = {}
         total = 0 
 
-        for i in data:
-            if datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f") <= datetime.now():
-                year = i['orderDate'].split("-")[0]
-                
-                yearlygrowth[year] += 1
-                total += 1
-                
-                cumulative_growth[year] = total
+        try:
+            for i in data:
+                if i['orderDate'] <= datetime.now():
+                    year = i['orderDate'].year
+                    
+                    yearlygrowth[year] += 1
+                    total += 1
+                    
+                    cumulative_growth[year] = total
+        except Exception as e:
+            print("Error in _getYearlyGrowth: ", e)
+        
+        try:
+            if showzeros:
+                df_growth = pd.DataFrame.from_dict(yearlygrowth, orient='index', columns=['growth'])
+                df_cumulative_growth = pd.DataFrame.from_dict(cumulative_growth, orient='index', columns=['cumulative_growth'])
 
-        if showzeros:
-            df_growth = pd.DataFrame.from_dict(yearlygrowth, orient='index', columns=['growth'])
-            df_cumulative_growth = pd.DataFrame.from_dict(cumulative_growth, orient='index', columns=['cumulative_growth'])
-                
-            full_date_range = pd.date_range(start=df_growth.index.min(), end=datetime.now() - pd.DateOffset(years=1), freq='YS')
-            year_index = full_date_range.strftime("%Y")
-            
-            df_growth_filled = df_growth.reindex(year_index, fill_value=0)
-            df_growth_filled.index = df_growth_filled.index
-            df_growth_filled.update(df_growth)
-            
-            df_cumulative_growth_filled = df_cumulative_growth.reindex(year_index, fill_value=0)
-            df_cumulative_growth_filled.index = df_cumulative_growth_filled.index
-            df_cumulative_growth_filled.update(df_cumulative_growth)
+                df_growth.index = df_growth.index.astype(int)
+                df_cumulative_growth.index = df_cumulative_growth.index.astype(int)
 
-            df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
-            df_cumulative_growth_filled.ffill(inplace=True)
-            df_cumulative_growth_filled.replace(pd.NA, 0, inplace=True)
+                start_year = df_growth.index.min()
+                end_year = datetime.now().year - 1
 
-            yearlygrowth = df_growth_filled.to_dict()['growth']
-            cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
+                year_range = range(start_year, end_year + 1)
+
+                df_growth_filled = df_growth.reindex(year_range, fill_value=0)
+                df_cumulative_growth_filled = df_cumulative_growth.reindex(year_range)
+
+                df_cumulative_growth_filled.ffill(inplace=True)
+                df_cumulative_growth_filled.fillna(0, inplace=True)
+                df_growth_filled.ffill(inplace=True)
+                df_growth_filled.fillna(0, inplace=True)
+
+                yearlygrowth = df_growth_filled['growth'].to_dict()
+                cumulative_growth = df_cumulative_growth_filled['cumulative_growth'].to_dict()
+
+        except Exception as e:
+            print("Error in _getYearlyGrowth with showzeros: ", e)
 
         return {"growth": dict(yearlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
     
@@ -141,37 +149,45 @@ class OrdersAmount(DescriptiveAnalysis):
         cumulative_growth = {}
         total = 0
 
-        for i in data:
-            order_date = datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f")
-            month = order_date.strftime("%Y-%m")
-            if order_date <= datetime.now():
-                total += 1
+        try:
 
-                cumulative_growth[month] = total
-                monthlygrowth[month] += 1
+            for i in data:
+                month = i['orderDate'].strftime("%Y-%m")
+                if i['orderDate'] <= datetime.now():
+                    total += 1
 
-        if showzeros:
-            df_growth = pd.DataFrame.from_dict(monthlygrowth, orient='index', columns=['growth'])
-            df_cumulative_growth = pd.DataFrame.from_dict(cumulative_growth, orient='index', columns=['cumulative_growth'])
+                    cumulative_growth[month] = total
+                    monthlygrowth[month] += 1
+        except Exception as e:
+            print("Error in _getMonthlyGrowth: ", e)
+
+        try:
+
+            if showzeros:
+                df_growth = pd.DataFrame.from_dict(monthlygrowth, orient='index', columns=['growth'])
+                df_cumulative_growth = pd.DataFrame.from_dict(cumulative_growth, orient='index', columns=['cumulative_growth'])
+                    
+                full_date_range = pd.date_range(start=df_growth.index.min(), end=datetime.now() - pd.DateOffset(months=1) , freq='MS')
+                month_index = full_date_range.strftime("%Y-%m")
                 
-            full_date_range = pd.date_range(start=df_growth.index.min(), end=datetime.now() - pd.DateOffset(months=1) , freq='MS')
-            month_index = full_date_range.strftime("%Y-%m")
-            
-            df_growth_filled = df_growth.reindex(month_index, fill_value=0)
-            df_growth_filled.index = df_growth_filled.index
-            df_growth_filled.update(df_growth)
-            
-            df_cumulative_growth_filled = df_cumulative_growth.reindex(month_index, fill_value=0)
-            df_cumulative_growth_filled.index = df_cumulative_growth_filled.index
-            df_cumulative_growth_filled.update(df_cumulative_growth)
+                df_growth_filled = df_growth.reindex(month_index, fill_value=0)
+                df_growth_filled.index = df_growth_filled.index
+                df_growth_filled.update(df_growth)
+                
+                df_cumulative_growth_filled = df_cumulative_growth.reindex(month_index, fill_value=0)
+                df_cumulative_growth_filled.index = df_cumulative_growth_filled.index
+                df_cumulative_growth_filled.update(df_cumulative_growth)
 
-            
-            df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
-            df_cumulative_growth_filled.ffill(inplace=True)
-            df_cumulative_growth_filled.replace(pd.NA, 0, inplace=True)
+                
+                df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
+                df_cumulative_growth_filled.ffill(inplace=True)
+                df_cumulative_growth_filled.replace(pd.NA, 0, inplace=True)
 
-            monthlygrowth = df_growth_filled.to_dict()['growth']
-            cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
+                monthlygrowth = df_growth_filled.to_dict()['growth']
+                cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
+
+        except Exception as e:
+            print("Error in _getMonthlyGrowth with showzeros: ", e)
         
         return {"growth": dict(monthlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
     
@@ -199,43 +215,49 @@ class OrdersAmount(DescriptiveAnalysis):
         if last_days < 0:
                 raise ValueError("The number of days should be greater than zero")
 
-        for i in data:
-            i['orderDate'] = i['orderDate'].split("t")[0]
-            if datetime.strptime(i['orderDate'], "%Y-%m-%d") <= datetime.now():
-                total += 1
-                cumulative_growth[i['orderDate']] = total
+        try:
+            for i in data:
+                if i['orderDate'].date() <= datetime.now().date():
+                    total += 1
+                    cumulative_growth[i['orderDate'].date()] = total
 
-                if last_days > 0 and showzeros is False:
-                    if datetime.strptime(i['orderDate'], "%Y-%m-%d") >= datetime.now() - timedelta(days=last_days):
-                        growth[i['orderDate']] += 1
-                elif showzeros or last_days == 0:
-                    growth[i['orderDate']] += 1
+                    if last_days > 0 and showzeros is False:
+                        if i['orderDate'].date() >= datetime.now().date() - timedelta(days=last_days):
+                            growth[i['orderDate'].date()] += 1
+                    elif showzeros or last_days == 0:
+                        growth[i['orderDate'].date()] += 1
+        except Exception as e:
+            print("Error in _getGrowthByDays: ", e)
             
-            
-        if showzeros:
-            df_growth = pd.DataFrame.from_dict(growth, orient='index', columns=['growth'])
-            df_cumulative_growth = pd.DataFrame.from_dict(cumulative_growth, orient='index', columns=['cumulative_growth'])
-            full_date_range = pd.date_range(start=df_growth.index.min(), end=datetime.now() - pd.DateOffset(days=1), freq='D')
-            
-            df_growth_filled = df_growth.reindex(full_date_range, fill_value=0)
-            df_growth_filled.index = df_growth_filled.index.strftime("%Y-%m-%d")
-            df_growth_filled.update(df_growth)
-            
-            df_cumulative_growth_filled = df_cumulative_growth.reindex(full_date_range, fill_value=0)
-            df_cumulative_growth_filled.index = df_cumulative_growth_filled.index.strftime("%Y-%m-%d")
-            df_cumulative_growth_filled.update(df_cumulative_growth)
 
-            df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
-            df_cumulative_growth_filled.ffill(inplace=True)
-            df_cumulative_growth_filled.replace(pd.NA, 0, inplace=True)
+        try:    
+            if showzeros:
+                df_growth = pd.DataFrame.from_dict(growth, orient='index', columns=['growth'])
+                df_cumulative_growth = pd.DataFrame.from_dict(cumulative_growth, orient='index', columns=['cumulative_growth'])
+                full_date_range = pd.date_range(start=df_growth.index.min(), end=datetime.now() - pd.DateOffset(days=1), freq='D')
+                
+                df_growth_filled = df_growth.reindex(full_date_range, fill_value=0)
+                df_growth_filled.index = df_growth_filled.index.strftime("%Y-%m-%d")
+                df_growth_filled.update(df_growth)
+                
+                df_cumulative_growth_filled = df_cumulative_growth.reindex(full_date_range, fill_value=0)
+                df_cumulative_growth_filled.index = df_cumulative_growth_filled.index.strftime("%Y-%m-%d")
+                df_cumulative_growth_filled.update(df_cumulative_growth)
 
-            if last_days > 0:
-                growth = df_growth_filled['growth'].iloc[-last_days:].to_dict()
-                cumulative_growth = df_cumulative_growth_filled['cumulative_growth'].iloc[-last_days:].to_dict()
-            elif last_days == 0:
-                growth = df_growth_filled.to_dict()['growth']
-                cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
-        elif last_days > 0:
-            cumulative_growth = {k: v for k, v in cumulative_growth.items() if datetime.strptime(k, "%Y-%m-%d") >= datetime.now() - timedelta(days=last_days)}
+                df_cumulative_growth_filled.replace(0, pd.NA, inplace=True)
+                df_cumulative_growth_filled.ffill(inplace=True)
+                df_cumulative_growth_filled.replace(pd.NA, 0, inplace=True)
+
+                if last_days > 0:
+                    growth = df_growth_filled['growth'].iloc[-last_days:].to_dict()
+                    cumulative_growth = df_cumulative_growth_filled['cumulative_growth'].iloc[-last_days:].to_dict()
+                elif last_days == 0:
+                    growth = df_growth_filled.to_dict()['growth']
+                    cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
+            elif last_days > 0:
+                cumulative_growth = {k: v for k, v in cumulative_growth.items() if k >= datetime.now().date() - timedelta(days=last_days)}
+        
+        except Exception as e:
+            print("Error in _getGrowthByDays with showzeros: ", e)
         
         return {"growth": dict(growth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}

@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TYPEOFGRAPH = "bar"
+############# DEPRECATED ######################
 
 class EmployeeAmount(DescriptiveAnalysis):
     """ Amount of Employees by Role
