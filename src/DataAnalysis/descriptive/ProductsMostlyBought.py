@@ -104,7 +104,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         products_bought = {}
         seen = set()
         for i in data:
-            if datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f").year == datetime.now().year:
+            if i['orderDate'].year == datetime.now().year:
                 if i['productId'] not in seen:
                     products_bought[i['productId']] = i['productAmount']
                     seen.add(i['productId'])
@@ -135,7 +135,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         products_bought = {}
         seen = set()
         for i in data:
-            if datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f").month == self._getCurrentMonth() and datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f").year == datetime.now().year:
+            if i['orderDate'].month == self._getCurrentMonth() and i['orderDate'].year == datetime.now().year:
                 if i['productId'] not in seen:
                     products_bought[i['productId']] = i['productAmount']
                     seen.add(i['productId'])
@@ -180,7 +180,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         seen = set()
         for i in data:
             if last_days > 0:
-                if datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f") >= datetime.now() - timedelta(days=last_days) and datetime.strptime(i['orderDate'], "%Y-%m-%dT%H:%M:%S.%f") <= datetime.now():
+                if i['orderDate'] >= datetime.now() - timedelta(days=last_days) and i['orderDate'] <= datetime.now():
                     if i['productId'] not in seen:
                         products_bought[i['productId']] = i['productAmount']
                         seen.add(i['productId'])
