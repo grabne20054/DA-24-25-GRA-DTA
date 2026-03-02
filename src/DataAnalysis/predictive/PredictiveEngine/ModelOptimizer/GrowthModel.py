@@ -28,7 +28,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../s
 from DataAnalysis.predictive.PredictiveAnalysis import PredictiveAnalysis
 from DataAnalysis.descriptive.OrdersAmount import OrdersAmount
 from DataAnalysis.descriptive.CustomerSignup import CustomerSignup
-from DataAnalysis.predictive.PredictiveEngine.ModelOptimizer.models import ModelParams
+from DataAnalysis.predictive.PredictiveEngine.ModelOptimizer.models.ModelParams import ModelParams
 
 # -------------------------------
 # Logger setup
@@ -100,7 +100,6 @@ class GrowthModel(PredictiveAnalysis):
     # Data preparation
     # -------------------------------
     def _to_datetime_timestamp(self, date):
-        logger.debug(f"Converting date {type(date)} {date} to timestamp")
         try:
             if isinstance(date, str):
                 if len(date) == 7:
@@ -151,8 +150,6 @@ class GrowthModel(PredictiveAnalysis):
 
         X = df.drop(columns=[self.growthtype]).values
         y = df[self.growthtype].values.reshape(-1, 1)
-        logger.info(f"Prepared data with shape X: {X.shape}, y: {y.shape}")
-        logger.info(f"Prepared data example: {X}, {y}")
 
         if X.size == 0 or y.size == 0:
             raise ValueError("Data preparation resulted in empty arrays.")
@@ -164,7 +161,6 @@ class GrowthModel(PredictiveAnalysis):
     # -------------------------------
     def _train_test_split(self, lag, rolling_mean, month: bool = False, year: bool = False):
         X, y = self._prepare_data(lag, rolling_mean, month, year)
-        logger.info(f"train test split {train_test_split(X, y, test_size=0.3, random_state=0, shuffle=False)}")
         return train_test_split(X, y, test_size=0.3, random_state=0, shuffle=False)
 
     # -------------------------------
@@ -201,7 +197,6 @@ class GrowthModel(PredictiveAnalysis):
             X_test_seq.append(X_test[i:i + sequence_length])
             y_test_seq.append(y_test[i + sequence_length])
 
-        logger.debug(f"Created {len(X_train_seq)} training sequences")
         return (np.array(X_train_seq), np.array(y_train_seq),
                 np.array(X_test_seq), np.array(y_test_seq))
 
@@ -219,9 +214,6 @@ class GrowthModel(PredictiveAnalysis):
         X_train_seq, y_train_seq, X_test_seq, y_test_seq = self._create_sequences(
             X_train, y_train, X_test, y_test, sequence_length
         )
-
-        logger.info(f"Final data shapes - X_train: {X_train_seq.shape}, y_train: {y_train_seq.shape}, X_test: {X_test_seq.shape}, y_test: {y_test_seq.shape}")
-        logger.info(f"Final data examples - X_train: {X_train_seq}, y_train: {y_train_seq}, X_test: {X_test_seq}, y_test: {y_test_seq}")
 
         # Ensure sequences have shape (samples, timesteps, features) for LSTM
         if X_train_seq.ndim == 2:
@@ -251,8 +243,6 @@ class GrowthModel(PredictiveAnalysis):
                     for epoch in [EPOCHS]:
                         for l2_reg in [L2_REG]:
                             logger.info(f"Running with {num_units} LSTM cells, dropout={dropout}, lr={learning_rate}, l2={l2_reg}")
-                            logger.info(f"Training data shape: {X_train.shape}, {y_train.shape}")
-                            logger.info(f"Training data example: {X_train}, {y_train}")
                             model = Sequential([
                                 LSTM(num_units, input_shape=(X_train.shape[1], X_train.shape[2]), dropout=dropout, kernel_regularizer=l2(l2_reg)),
                                 Dense(1)
@@ -352,6 +342,8 @@ class GrowthModel(PredictiveAnalysis):
         elif option == "year":
             pred_list = {datetime.now().year: y_pred_list[0]}
 
+        pred_list = {k: float(v) for k, v in pred_list.items()}
+
         return {"predictions": pred_list, "typeofgraph": TYPEOFGRAPH}
 
     # -------------------------------
@@ -366,7 +358,11 @@ class GrowthModel(PredictiveAnalysis):
     def _normalize_X_test(self, X_test, pipeline: Pipeline):
         if len(X_test) == 0:
             raise ValueError("Testing data is empty.")
-        X_test = pipeline.transform(pd.DataFrame(X_test))
+        try:
+            X_test = pipeline.transform(X_test)
+        except Exception:
+            logger.exception("Error normalizing X_test")
+            raise
         return X_test, pipeline
 
     def perform(self, lag, rolling_mean, sequence_length, month, year):
