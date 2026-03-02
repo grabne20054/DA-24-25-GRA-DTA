@@ -34,8 +34,8 @@ class CustomerSignup(DescriptiveAnalysis):
             print("Connection error: ", e)
         except Exception as e:
             print("Error: ", e)
-        
-    def perform(self, last_days: int = 0, year: bool = False, month: bool = False, showzeros: bool = False) -> dict:
+
+    def perform(self, last_days: int = 0, year: bool = False, month: bool = False, showzeros: bool = False, machine_learning: bool = False) -> dict:
         """
         Perform the analysis
 
@@ -44,13 +44,15 @@ class CustomerSignup(DescriptiveAnalysis):
             year (bool, optional): If True, returns the yearly growth. Defaults to False.
             month (bool, optional): If True, returns the monthly growth. Defaults to False.
             showzeros (bool, optional): If True, shows the days with zero growth. Defaults to False.
+            machine_learning (bool, optional): If True, cumulative growth is not calculated. Defaults to False.
 
         Returns:
-            dict: Dictionary containing growth as dictionary and cumulative growth data as dictionary#
-        
+            dict: Dictionary containing growth as dictionary and cumulative growth data as dictionary
+
         Raises:
             ValueError: If the number of days is less than zero
         """
+        self.machine_learning = machine_learning
 
         data = self.collect()
         if data == None:
@@ -104,9 +106,10 @@ class CustomerSignup(DescriptiveAnalysis):
                     year = i['signedUp'].year
                     
                     yearlygrowth[year] += 1
-                    total += 1
-                    
-                    cumulative_growth[year] = total
+                    if not self.machine_learning:
+                        total += 1
+                        
+                        cumulative_growth[year] = total
         except Exception as e:
             print("Error in _getYearlyGrowth total growth: ", e)
         
@@ -158,8 +161,9 @@ class CustomerSignup(DescriptiveAnalysis):
                 month = i['signedUp'].strftime("%Y-%m")
 
                 if i['signedUp'] <= datetime.now():
-                    total += 1
-                    cumulative_growth[month] = total
+                    if not self.machine_learning:
+                        total += 1
+                        cumulative_growth[month] = total
                     
                     monthlygrowth[month] += 1
         except Exception as e:
@@ -221,8 +225,9 @@ class CustomerSignup(DescriptiveAnalysis):
         try:
             for i in data:
                     if i['signedUp'].date() <= datetime.now().date():
-                        total += 1
-                        cumulative_growth[i['signedUp'].date()] = total
+                        if not self.machine_learning:
+                            total += 1
+                            cumulative_growth[i['signedUp'].date()] = total
 
                         if last_days > 0 and showzeros is False:
                             if i['signedUp'].date() >= datetime.now().date() - timedelta(days=last_days):
