@@ -28,7 +28,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../s
 from DataAnalysis.predictive.PredictiveAnalysis import PredictiveAnalysis
 from DataAnalysis.descriptive.OrdersAmount import OrdersAmount
 from DataAnalysis.descriptive.CustomerSignup import CustomerSignup
-from models.ModelParams import ModelParams
+from DataAnalysis.predictive.PredictiveEngine.ModelOptimizer.models import ModelParams
 
 # -------------------------------
 # Logger setup
