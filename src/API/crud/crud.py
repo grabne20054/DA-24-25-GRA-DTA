@@ -18,9 +18,25 @@ load_dotenv()
 ####################### DESCRIPTIVE #######################
 
 async def get_customers_signup(last_days: int = 0, month: bool = False, year: bool = False, showzeros: bool = False):
+    if month and year:
+        raise HTTPException(status_code=400, detail="Invalid parameters: month and year cannot be True at the same time")
+    if last_days < 0:
+        raise HTTPException(status_code=400, detail="Invalid parameters: last_days cannot be negative")
+    if month and last_days > 0:
+        raise HTTPException(status_code=400, detail="Invalid parameters: month cannot be True if last_days is greater than 0")
+    if year and last_days > 0:
+        raise HTTPException(status_code=400, detail="Invalid parameters: year cannot be True if last_days is greater than 0")
     return CustomerSignup.CustomerSignup().perform(last_days=last_days, month=month, year=year, showzeros=showzeros)
 
 async def get_orders_amount(last_days: int = 0, month: bool = False, year: bool = False, showzeros: bool = False):
+    if month and year:
+        raise HTTPException(status_code=400, detail="Invalid parameters: month and year cannot be True at the same time")
+    if last_days < 0:
+        raise HTTPException(status_code=400, detail="Invalid parameters: last_days cannot be negative")
+    if month and last_days > 0:
+        raise HTTPException(status_code=400, detail="Invalid parameters: month cannot be True if last_days is greater than 0")
+    if year and last_days > 0:
+        raise HTTPException(status_code=400, detail="Invalid parameters: year cannot be True if last_days is greater than 0")
     return OrdersAmount.OrdersAmount().perform(last_days=last_days, month=month, year=year, showzeros=showzeros)
 
 async def get_employees_amount():
