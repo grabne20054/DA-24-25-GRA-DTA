@@ -4,7 +4,7 @@ from os import getenv
 from dotenv import load_dotenv
 load_dotenv()
 
-OPTIONS = {"one_day": {"lag": 7, "sequence_lenght": 7, "rolling_mean": 3}, "seven_days": {"lag": 14, "sequence_lenght": 7, "rolling_mean": 7}, "month": {"lag": 6, "sequence_lenght": 1, "rolling_mean": 3}, "year": {"lag": 1, "sequence_lenght": 1, "rolling_mean": 1}}
+from DataAnalysis.predictive.dependencies import OPTIONS
 
 class ModelManager:
     def __init__(self):
@@ -35,7 +35,7 @@ class ModelManager:
                         filter_string=f"""
                         attributes.run_name = '{data_analysis}' 
                         AND params.`lag` = '{OPTIONS[option]['lag']}' 
-                        AND params.`sequence_length` = '{OPTIONS[option]['sequence_lenght']}' 
+                        AND params.`sequence_length` = '{OPTIONS[option]['sequence_length']}' 
                         AND params.`rolling_mean` = '{OPTIONS[option]['rolling_mean']}'
                         """,
                         run_view_type=mlflow.entities.ViewType.ACTIVE_ONLY,

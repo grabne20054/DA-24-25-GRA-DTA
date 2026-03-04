@@ -50,21 +50,10 @@ async def get_items_bought_correlation(productId: str, amount_combined_products:
 
 ####################### PREDICTIVE #######################
 
-async def get_customers_growth(one_day: bool = False, seven_days: bool = False, month: bool = False, year: bool = False):
+async def get_customers_growth():
     try:
-        option = None
-        if one_day is True:
-            option = "one_day"
-        elif seven_days is True:
-            option = "seven_days"
-        elif month is True:
-            option = "month"
-        elif year is True:
-            option = "year"
-        else: 
-            raise HTTPException(status_code=400, detail="Invalid parameters")
-    
-        return DataPredictor.DataPredictor("CustomerGrowth").predict("CustomerGrowth", option)
+
+        return DataPredictor.DataPredictor("CustomerGrowth").predict()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -87,21 +76,10 @@ async def get_cumulative_customers_growth(one_day: bool = False, seven_days: boo
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-async def get_orders_growth(one_day: bool = False, seven_days: bool = False, month: bool = False, year: bool = False):
+async def get_orders_growth():
     try:
-        option = None
-        if one_day is True:
-            option = "one_day"
-        elif seven_days is True:
-            option = "seven_days"
-        elif month is True:
-            option = "month"
-        elif year is True:
-            option = "year"
-        else: 
-            raise HTTPException(status_code=400, detail="Invalid parameters")
-    
-        return DataPredictor.DataPredictor("OrdersGrowth").predict("OrdersGrowth", option)
+
+        return DataPredictor.DataPredictor("OrdersGrowth").predict()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

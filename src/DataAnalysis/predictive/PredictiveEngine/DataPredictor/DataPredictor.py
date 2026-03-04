@@ -1,86 +1,73 @@
+import os
+import pickle
+import mlflow
 import mlflow.artifacts
 from mlflow.tensorflow import load_model
 from mlflow.tracking import MlflowClient
 from datetime import datetime, timedelta
-from DataAnalysis.predictive.PredictiveEngine.ModelOptimizer.GrowthModel import GrowthModel
-from DataAnalysis.descriptive.CustomerSignup import CustomerSignup
-from DataAnalysis.descriptive.OrdersAmount import OrdersAmount
 import numpy as np
 import pandas as pd
-import pickle
-import os
-
-from DataAnalysis.predictive.PredictiveEngine.ModelOptimizer.ModelOptimizer import OPTIONS
-
-import mlflow
 from os import getenv
+
+from DataAnalysis.descriptive.CustomerSignup import CustomerSignup
+from DataAnalysis.descriptive.OrdersAmount import OrdersAmount
+from DataAnalysis.predictive.dependencies import OPTIONS, HORIZONS
+
 
 class DataPredictor:
 
-    def __init__(self, data_analysis:str):
+    def __init__(self, data_analysis: str):
         self.model = None
-        self.scaler_y = None
         self.scaler_X = None
+        self.scaler_y = None
         self.data_analysis = data_analysis
 
-    def _get_best_model_id(self, data_analysis:str, option:str) -> str:
-        try:
-            client = MlflowClient(tracking_uri=getenv("MLFLOWURL"))
-            mlflow.set_tracking_uri(getenv("MLFLOWURL"))
-            experiment = client.get_experiment_by_name("GrowthEx")
+    # ---------------------------------------------------------
+    # LOAD BEST MODEL FROM MLFLOW
+    # ---------------------------------------------------------
+    def _get_best_model_id(self):
+        client = MlflowClient(tracking_uri=getenv("MLFLOWURL"))
+        mlflow.set_tracking_uri(getenv("MLFLOWURL"))
 
-            if experiment is None:
-                raise Exception('Experiment not found')
-            else: 
-                runs = client.search_runs(
-                experiment_ids=[experiment.experiment_id],
-                filter_string=f"""
-                attributes.run_name = '{data_analysis}' 
-                AND params.`lag` = '{OPTIONS[option]['lag']}' 
-                AND params.`sequence_length` = '{OPTIONS[option]['sequence_lenght']}' 
-                AND params.`rolling_mean` = '{OPTIONS[option]['rolling_mean']}'
-                """,
-                run_view_type=mlflow.entities.ViewType.ACTIVE_ONLY,
-                max_results=1,
-                order_by=["metrics.train_mse DESC", "metrics.train_mae DESC"]
-            )
+        experiment = client.get_experiment_by_name("GrowthEx")
+        if experiment is None:
+            raise Exception("Experiment not found")
 
-            if not runs:
-                raise Exception('No runs found for the given parameters')
+        runs = client.search_runs(
+            experiment_ids=[experiment.experiment_id],
+            filter_string=f"attributes.run_name = '{self.data_analysis}'",
+            run_view_type=mlflow.entities.ViewType.ACTIVE_ONLY,
+            max_results=1,
+            order_by=["metrics.val_mse ASC", "metrics.val_mae ASC"]
+        )
 
-            best_run = runs[0]
-                
-            return best_run.info.run_id, best_run.info.artifact_uri
-        except Exception as e:
-            raise e
+        if not runs:
+            raise Exception("No runs found")
 
-    def _getScalerOfModel(self, run_id: str, artifact_path: str = "model/scaler.pkl") -> None:
-        try:
-            scaler_local = mlflow.artifacts.download_artifacts(run_id=run_id, artifact_path=artifact_path)
+        best_run = runs[0]
+        return best_run.info.run_id, best_run.info.artifact_uri
 
-            if not os.path.exists(scaler_local):
-                raise FileNotFoundError(f"Scaler file not found at {scaler_local}")
+    def _load_scaler(self, run_id: str, artifact_name: str):
+        local_path = mlflow.artifacts.download_artifacts(
+            run_id=run_id,
+            artifact_path=f"model/{artifact_name}"
+        )
 
-            with open(scaler_local, "rb") as f:
-                scaler = pickle.load(f)
+        with open(local_path, "rb") as f:
+            return pickle.load(f)
 
-            if artifact_path == "model/scaler_y.pkl":
-                self.scaler_y = scaler
-            elif artifact_path == "model/scaler_X.pkl":
-                self.scaler_X = scaler
+    def load_best_model(self):
+        run_id, artifact_uri = self._get_best_model_id()
 
-        except Exception as e:
-            raise Exception(f"Failed to retrieve scaler: {e}")
+        model_uri = f"{artifact_uri}/model"
+        self.model = load_model(model_uri)
 
-            
+        self.scaler_X = self._load_scaler(run_id, "scaler_X.pkl")
+        self.scaler_y = self._load_scaler(run_id, "scaler_y.pkl")
 
-    def loadBestModel(self, data_analysis:str, option:str):
-        best_model_id, artifact_uri = self._get_best_model_id(data_analysis, option)
-        model_url = f"{artifact_uri}/model"
-        self.model = load_model(model_url)
-        self._getScalerOfModel(best_model_id, "model/scaler_y.pkl")
-        self._getScalerOfModel(best_model_id, "model/scaler_X.pkl")
-
+    # ---------------------------------------------------------
+    # DATA PREPARATION (SAME AS TRAINING)
+    # ---------------------------------------------------------
     def _to_datetime_timestamp(self, date):
         if isinstance(date, str):
             if len(date) == 7:
@@ -95,87 +82,81 @@ class DataPredictor:
             dt = date
 
         return dt.timestamp()
-    
-    def predict(self, data_analysis:str, option:str):
-        self.loadBestModel(data_analysis, option)
+
+    def _get_recent_data(self):
+        if self.data_analysis == "CustomerGrowth":
+            data = CustomerSignup().perform(
+                last_days=OPTIONS["sequence_length"] + max(HORIZONS),
+                showzeros=True,
+                machine_learning=True
+            )
+        elif self.data_analysis == "OrdersGrowth":
+            data = OrdersAmount().perform(
+                last_days=OPTIONS["sequence_length"] + max(HORIZONS),
+                showzeros=True,
+                machine_learning=True
+            )
+        else:
+            raise ValueError("Invalid analysis type")
+
+        return data
+
+    def _prepare_features(self, data_dict):
+        timestamps = []
+        values = []
+
+        for k, v in data_dict["growth"].items():
+            timestamps.append(self._to_datetime_timestamp(k))
+            values.append(v)
+
+        df = pd.DataFrame({
+            "timestamp": timestamps,
+            "growth": values
+        })
+
+        for i in range(1, OPTIONS["lag"] + 1):
+            df[f"lag_{i}"] = df["growth"].shift(i)
+
+        df["rolling_mean"] = df["growth"].rolling(
+            window=OPTIONS["rolling_mean"]
+        ).mean()
+
+        df.dropna(inplace=True)
+
+        X = df.drop(columns=["growth"]).values
+
+        return X, df
+
+    # ---------------------------------------------------------
+    # PREDICT MULTI-HORIZON
+    # ---------------------------------------------------------
+    def predict(self):
+
         if self.model is None:
-            raise Exception("Model not loaded")
-        if self.scaler_X is None:
-            raise Exception("Scaler X not loaded")
-        if self.scaler_y is None:
-            raise Exception("Scaler y not loaded")
+            self.load_best_model()
 
-        if data_analysis == "CustomerGrowth":
-            growth = GrowthModel("CustomerGrowth", "growth", data_source=CustomerSignup())
-            X_test = self._getHistoricalData(option, growth.data_source, growth.growthtype)
-        elif data_analysis == "OrdersGrowth":
-            growth = GrowthModel("OrdersGrowth", "growth", data_source=OrdersAmount())
-            X_test = self._getHistoricalData(option, growth.data_source, growth.growthtype)
-        
-        try:
+        raw_data = self._get_recent_data()
+        X_raw, df = self._prepare_features(raw_data)
 
-            pred = growth.predict(X_test, self.model, self.scaler_y, self.scaler_X, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], OPTIONS[option]["sequence_lenght"], option)
-        
-        except Exception as e:
-            raise Exception(f"Failed to predict: {e}")
+        X_scaled = self.scaler_X.transform(X_raw)
 
-        return pred
-    
-    def _getHistoricalData(self, option:str, data_source: CustomerSignup | OrdersAmount, growthtype: str):
-        amount_historical_data = 0
-        if growthtype == "cumulative_growth":
-            index = 1
-        elif growthtype == "growth":
-            index = 0
-        try:
-            if option == "one_day":
-                amount_historical_data = 2 * OPTIONS[option]["sequence_lenght"] + max(OPTIONS[option]["rolling_mean"], OPTIONS[option]["lag"]) + OPTIONS[option]["rolling_mean"]
-                X_data = data_source.perform(last_days=amount_historical_data, showzeros=True)
-                analysis = list(X_data.keys())[index]
-                X_data = X_data[analysis]
-                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], growthtype=growthtype)
-            elif option == "seven_days":
-                amount_historical_data = 2 * OPTIONS[option]["sequence_lenght"] + max(OPTIONS[option]["rolling_mean"], OPTIONS[option]["lag"]) + OPTIONS[option]["rolling_mean"]
-                X_data = data_source.perform(last_days=amount_historical_data, showzeros=True)
-                analysis = list(X_data.keys())[0]
-                X_data = X_data[analysis]
-                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], growthtype=growthtype)
-            elif option == "month":
-                amount_historical_data = OPTIONS[option]["sequence_lenght"] + OPTIONS[option]["rolling_mean"]
-                X_data = data_source.perform(month=True, showzeros=True)
-                print(X_data)
-                analysis = list(X_data.keys())[index]
-                X_data = X_data[analysis]
-                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], growthtype=growthtype)
-            elif option == "year":
-                amount_historical_data = OPTIONS[option]["sequence_lenght"] + OPTIONS[option]["rolling_mean"]
-                X_data = data_source.perform(year=True, showzeros=True)
-                analysis = list(X_data.keys())[index]
-                X_data = X_data[analysis]
-                X_data = self._prepare_test_data(X_data, OPTIONS[option]["lag"], OPTIONS[option]["rolling_mean"], growthtype=growthtype)
-            return X_data
-        except Exception as e:
-            raise Exception(f"Failed to get historical data: {e}")
-        
-    def _prepare_test_data(self, X_test_raw, lag, rolling_mean, growthtype:str):
-        try:
-            print(X_test_raw)
-            X = np.array([self._to_datetime_timestamp(key) for key in X_test_raw])
-            y = np.array([int(X_test_raw[value]) for value in X_test_raw])
-            df = pd.DataFrame(y, columns=[growthtype])
-            df['timestamp'] = X
+        seq_len = OPTIONS["sequence_length"]
+        last_sequence = X_scaled[-seq_len:]
+        last_sequence = last_sequence.reshape(1, seq_len, last_sequence.shape[1])
 
-            df.drop(columns=[growthtype], inplace=True)
+        y_pred_scaled = self.model.predict(last_sequence)
 
-            for i in range(1, lag + 1):
-                df[f'lag_{i}'] = df['timestamp'].shift(i)
+        y_pred = self.scaler_y.inverse_transform(y_pred_scaled)
 
-            df['rolling_mean'] = df['timestamp'].rolling(window=rolling_mean).mean()
-            df.dropna(inplace=True)
+        y_pred = y_pred.flatten()
 
-        except Exception as e:
-            raise e
+        last_timestamp = df["timestamp"].iloc[-1]
+        last_date = datetime.fromtimestamp(last_timestamp)
 
-        return df
+        forecast = {}
 
-        
+        for horizon, value in zip(HORIZONS, y_pred):
+            forecast_date = last_date + timedelta(days=horizon)
+            forecast[str(forecast_date.date())] = float(value)
+
+        return {"predictions": forecast}

@@ -12,8 +12,7 @@ logger = logging.getLogger(__name__)
 from threading import Thread
 import time
 
-OPTIONS = {"one_day": {"lag": 7, "sequence_lenght": 7, "rolling_mean": 3}, "seven_days": {"lag": 14, "sequence_lenght": 7, "rolling_mean": 7}, "month": {"lag": 6, "sequence_lenght": 1, "rolling_mean": 3}}
-# year not supported yet
+from DataAnalysis.predictive.dependencies import OPTIONS
 class ModelOptimizer:
     def __init__(self):
         self.customerGrowth = GrowthModel("CustomerGrowth", "growth", data_source=CustomerSignup())
@@ -21,22 +20,9 @@ class ModelOptimizer:
 
     
     def spawn_optimizer(self):
-        month = False
-        year = False
-
-        for option_key in OPTIONS.keys():
-            for model in [self.customerGrowth, self.ordersGrowth]:
-                if option_key == "month":
-                    month = True
-                elif option_key == "year":
-                    year = True
-                t = Thread(target=model.perform, args=(OPTIONS[option_key]["lag"],
-                                                        OPTIONS[option_key]["rolling_mean"],
-                                                          OPTIONS[option_key]["sequence_lenght"], month, year))
-                t.start()
-                logger.info(f"Spawned thread for {model} with option {option_key}")
-                month = False
-                year = False
+        for model in [self.customerGrowth, self.ordersGrowth]:
+            t = Thread(target=model.perform, args=(OPTIONS, model))
+            t.start()
 
 
 if __name__ == "__main__":

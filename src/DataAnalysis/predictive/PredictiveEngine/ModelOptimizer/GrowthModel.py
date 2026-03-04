@@ -29,6 +29,9 @@ from DataAnalysis.predictive.PredictiveAnalysis import PredictiveAnalysis
 from DataAnalysis.descriptive.OrdersAmount import OrdersAmount
 from DataAnalysis.descriptive.CustomerSignup import CustomerSignup
 from DataAnalysis.predictive.PredictiveEngine.ModelOptimizer.models.ModelParams import ModelParams
+from DataAnalysis.predictive.PredictiveEngine.ModelOptimizer.models.ModelData import ModelData
+
+from DataAnalysis.predictive.dependencies import HORIZONS
 
 # -------------------------------
 # Logger setup
@@ -50,10 +53,10 @@ MODEL_DIR = '/models/'
 TYPEOFGRAPH = "line"
 
 NUM_UNITS = 120  # number of LSTM cells
-DROPOUT = 0.1    # dropout rate for regularization
-LEARNING_RATE = 1e-5
-EPOCHS = 100
-L2_REG = 1e-4
+DROPOUT = [0.1, 0.001]  # dropout rate for regularization
+LEARNING_RATE = [1e-5, 1e-3]  # learning rates to try
+EPOCHS = [100, 150]  # number of epochs for training
+L2_REG = [0.0, 1e-6]  # L2 regularization strength
 
 load_dotenv()
 
@@ -67,6 +70,7 @@ class GrowthModel(PredictiveAnalysis):
         self.growthtype = growthtype
         self.data_analysis = data_analysis
         self.setup_mlflow()
+        self.data = self.collect()
 
     # -------------------------------
     # MLFlow setup
@@ -83,15 +87,9 @@ class GrowthModel(PredictiveAnalysis):
     # -------------------------------
     # Data collection
     # -------------------------------
-    def collect(self, month: bool = False, year: bool = False):
+    def collect(self):
         try:
-            showzeros = True
-            if year:
-                return self.data_source.perform(year=year, showzeros=showzeros)
-            elif month:
-                return self.data_source.perform(month=month, showzeros=showzeros)
-            else:
-                return self.data_source.perform(showzeros=showzeros)
+            return self.data_source.perform(showzeros=True, machine_learning=True)
         except Exception:
             logger.exception("Error in collect")
             return None
@@ -121,14 +119,12 @@ class GrowthModel(PredictiveAnalysis):
             logger.exception(f"Error converting date {date} to timestamp")
             raise
 
-    def _prepare_data(self, lag, rolling_mean, month: bool = False, year: bool = False):
-        data = self.collect(month, year)
-        if data is None:
+    def _prepare_data(self, lag, rolling_mean):
+        if self.data is None:
             raise ValueError("Data collection failed. Please check the data source.")
-        logger.info(f"Collected data: {data}")
         try:
-            X = np.array([self._to_datetime_timestamp(k) for k in data[self.growthtype].keys()])
-            y = np.array([int(data[self.growthtype][k]) for k in data[self.growthtype]])
+            X = np.array([self._to_datetime_timestamp(k) for k in self.data[self.growthtype].keys()])
+            y = np.array([int(self.data[self.growthtype][k]) for k in self.data[self.growthtype]])
         except Exception:
             logger.exception("Error converting data to arrays")
             return None, None
@@ -138,8 +134,13 @@ class GrowthModel(PredictiveAnalysis):
             df['timestamp'] = X
 
             # Add lag features
-            for i in range(1, lag + 1):
-                df[f'lag_{i}'] = df[self.growthtype].shift(i)
+            lags = range(1, lag + 1)
+            lag_cols = {}
+            for i in lags:
+                lag_cols[f'lag_{i}'] = df[self.growthtype].shift(i)
+
+            lag_df = pd.DataFrame(lag_cols, index=df.index)
+            df = pd.concat([df, lag_df], axis=1)
 
             # Add rolling mean
             df['rolling_mean'] = df[self.growthtype].rolling(window=rolling_mean).mean()
@@ -159,8 +160,8 @@ class GrowthModel(PredictiveAnalysis):
     # -------------------------------
     # Train-test split
     # -------------------------------
-    def _train_test_split(self, lag, rolling_mean, month: bool = False, year: bool = False):
-        X, y = self._prepare_data(lag, rolling_mean, month, year)
+    def _train_test_split(self, lag, rolling_mean):
+        X, y = self._prepare_data(lag, rolling_mean)
         return train_test_split(X, y, test_size=0.3, random_state=0, shuffle=False)
 
     # -------------------------------
@@ -177,25 +178,23 @@ class GrowthModel(PredictiveAnalysis):
         test = pipeline.transform(test)
         return train, test, pipeline
 
-    def _unscale_y(self, y, pipeline_y: Pipeline):
-        return pipeline_y.inverse_transform(y)
 
     # -------------------------------
     # Sequence creation
     # -------------------------------
-    def _create_sequences(self, X_train, y_train, X_test, y_test, sequence_length):
+    def _create_sequences(self, X_train, y_train, X_test, y_test, sequence_length, horizons=HORIZONS):
         if sequence_length <= 0:
             raise ValueError("sequence_length must be > 0")
 
         X_train_seq, y_train_seq = [], []
-        for i in range(len(X_train) - sequence_length):
+        for i in range(len(X_train) - sequence_length - max(horizons) + 1):
             X_train_seq.append(X_train[i:i + sequence_length])
-            y_train_seq.append(y_train[i + sequence_length])
+            y_train_seq.append([y_train[i + sequence_length + h - 1] for h in horizons])
 
         X_test_seq, y_test_seq = [], []
-        for i in range(len(X_test) - sequence_length):
+        for i in range(len(X_test) - sequence_length - max(horizons) + 1):
             X_test_seq.append(X_test[i:i + sequence_length])
-            y_test_seq.append(y_test[i + sequence_length])
+            y_test_seq.append([y_test[i + sequence_length + h - 1] for h in horizons])
 
         return (np.array(X_train_seq), np.array(y_train_seq),
                 np.array(X_test_seq), np.array(y_test_seq))
@@ -203,8 +202,8 @@ class GrowthModel(PredictiveAnalysis):
     # -------------------------------
     # Pipeline for data
     # -------------------------------
-    def provide_data_to_perform(self, lag, rolling_mean, sequence_length, month=False, year=False):
-        X_train, X_test, y_train, y_test = self._train_test_split(lag, rolling_mean, month, year)
+    def provide_data_to_perform(self, lag, rolling_mean, sequence_length):
+        X_train, X_test, y_train, y_test = self._train_test_split(lag, rolling_mean)
         if X_train is None or X_test is None or len(X_train) == 0 or len(X_test) == 0:
             raise ValueError("Not enough data.")
         X_train, X_test, scaler_X = self._normalize(X_train, X_test)
@@ -232,44 +231,66 @@ class GrowthModel(PredictiveAnalysis):
     # -------------------------------
     # Training and hyperparameter search
     # -------------------------------
-    def find_best_params(self, lag, rolling_mean, sequence_length, month=False, year=False):
+    def find_best_params(self, options: dict):
         X_train, X_test, y_train, y_test, scaler_X, scaler_y = self.provide_data_to_perform(
-            lag, rolling_mean, sequence_length, month, year)
+                lag=options["lag"],
+                rolling_mean=options["rolling_mean"],
+                sequence_length=options["sequence_length"]
+            )
+        
+        modeldata = ModelData(
+            lag=options["lag"],
+            rolling_mean=options["rolling_mean"],
+            sequence_length=options["sequence_length"],
+            X_train=X_train,
+            X_test=X_test,
+            y_train=y_train,
+            y_test=y_test,
+            scaler_X=scaler_X,
+            scaler_y=scaler_y
+        )
+
+        params = self.run(modeldata)
+        self.save_best_model(params)
+
+        return None
+
+    def run(self, modeldata: ModelData) -> ModelParams:
 
         results = {}
-        for num_units in [NUM_UNITS]:
-            for dropout in [DROPOUT]:
-                for learning_rate in [LEARNING_RATE]:
-                    for epoch in [EPOCHS]:
-                        for l2_reg in [L2_REG]:
-                            logger.info(f"Running with {num_units} LSTM cells, dropout={dropout}, lr={learning_rate}, l2={l2_reg}")
-                            model = Sequential([
-                                LSTM(num_units, input_shape=(X_train.shape[1], X_train.shape[2]), dropout=dropout, kernel_regularizer=l2(l2_reg)),
-                                Dense(1)
-                            ])
-                            model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse', metrics=['mae'])
-                            history = model.fit(X_train, y_train, epochs=epoch, batch_size=32, validation_data=(X_test, y_test), verbose=1)
+        for dropout in DROPOUT:
+            for learning_rate in LEARNING_RATE:
+                for epoch in EPOCHS:
+                    for l2_reg in L2_REG:
+                        logger.info(f"Running with {NUM_UNITS} LSTM cells, dropout={dropout}, lr={learning_rate}, l2={l2_reg}")
 
-                            best_epoch = np.argmin(history.history['val_loss'])
-                            train_mse = history.history['loss'][best_epoch]
-                            val_mse = history.history['val_loss'][best_epoch]
-                            train_mae = history.history['mae'][best_epoch]
-                            val_mae = history.history['val_mae'][best_epoch]
+                        model = Sequential()
+                        model.add(LSTM(NUM_UNITS, dropout=dropout, return_sequences=False, input_shape=(modeldata.X_train.shape[1], modeldata.X_train.shape[2]), kernel_regularizer=l2(l2_reg)))
+                        model.add(Dense(len(HORIZONS)))
+                        model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse', metrics=['mae'])
+                        early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+                        history = model.fit(modeldata.X_train, modeldata.y_train, epochs=epoch, batch_size=32, validation_data=(modeldata.X_test, modeldata.y_test), verbose=1, callbacks=[early_stopping])
 
-                            results[(num_units, dropout, learning_rate, best_epoch, l2_reg, model)] = {
-                                'train_mse': train_mse,
-                                'val_mse': val_mse,
-                                'train_mae': train_mae,
-                                'val_mae': val_mae
-                            }
+                        best_epoch = np.argmin(history.history['val_loss'])
+                        train_mse = history.history['loss'][best_epoch]
+                        val_mse = history.history['val_loss'][best_epoch]
+                        train_mae = history.history['mae'][best_epoch]
+                        val_mae = history.history['val_mae'][best_epoch]
 
-                            logger.info(f"Train MSE={train_mse}, Val MSE={val_mse}, Train MAE={train_mae}, Val MAE={val_mae}")
+                        results[(NUM_UNITS, dropout, learning_rate, best_epoch, l2_reg, model)] = {
+                            'train_mse': train_mse,
+                            'val_mse': val_mse,
+                            'train_mae': train_mae,
+                            'val_mae': val_mae
+                        }
+
+                        logger.info(f"Train MSE={train_mse}, Val MSE={val_mse}, Train MAE={train_mae}, Val MAE={val_mae}")
 
         val_results = {key: results[key]['val_mse'] for key in results.keys()}
         num_cells, dropout_rate, lr, num_epochs, l2_reg, model = min(val_results, key=val_results.get)
         logger.info(f"Best parameters: {num_cells} cells, {num_epochs} epochs, dropout={dropout_rate}, lr={lr}, l2={l2_reg}")
-
-        params = ModelParams(
+        
+        return ModelParams(
             run_name=self.data_analysis,
             num_units=num_cells,
             dropout=dropout_rate,
@@ -281,16 +302,13 @@ class GrowthModel(PredictiveAnalysis):
             train_mae=results[(num_cells, dropout_rate, lr, num_epochs, l2_reg, model)]['train_mae'],
             val_mae=results[(num_cells, dropout_rate, lr, num_epochs, l2_reg, model)]['val_mae'],
             model=model,
-            input_example=X_train.reshape(X_train.shape[0], -1),
-            scaler_y=scaler_y,
-            scaler_X=scaler_X,
-            lag=lag,
-            rolling_mean=rolling_mean,
-            sequence_length=sequence_length
+            input_example=modeldata.X_train.reshape(modeldata.X_train.shape[0], -1),
+            scaler_y=modeldata.scaler_y,
+            scaler_X=modeldata.scaler_X,
+            lag=modeldata.lag,
+            rolling_mean=modeldata.rolling_mean,
+            sequence_length=modeldata.sequence_length
         )
-
-        self.save_best_model(params)
-        return num_epochs, num_epochs, lr, dropout_rate
 
     # -------------------------------
     # Save model and scalers
@@ -323,30 +341,6 @@ class GrowthModel(PredictiveAnalysis):
             mlflow.end_run()
 
     # -------------------------------
-    # Prediction
-    # -------------------------------
-    def predict(self, X_test_raw, model, scaler_y, scaler_X, lag, rolling_mean, sequence_length, option: str):
-        X_test, _ = self._normalize_X_test(X_test_raw, scaler_X)
-        X_test_seq = [X_test[i:i + sequence_length] for i in range(len(X_test) - sequence_length)]
-        X_test = np.array(X_test_seq)
-        y_pred = model.predict(X_test)
-        y_pred = self._unscale_y(y_pred, scaler_y)
-        y_pred_list = [y[0] for y in y_pred]
-
-        if option == "one_day":
-            pred_list = {(datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d"): y_pred_list[0]}
-        elif option == "seven_days":
-            pred_list = {(datetime.now() + timedelta(days=i+1)).strftime("%Y-%m-%d"): y_pred_list[i] for i in range(7)}
-        elif option == "month":
-            pred_list = {datetime.now().strftime("%Y-%m"): y_pred_list[0]}
-        elif option == "year":
-            pred_list = {datetime.now().year: y_pred_list[0]}
-
-        pred_list = {k: float(v) for k, v in pred_list.items()}
-
-        return {"predictions": pred_list, "typeofgraph": TYPEOFGRAPH}
-
-    # -------------------------------
     # Utility methods
     # -------------------------------
     def _save_scaler(self, scaler, scaler_path):
@@ -355,18 +349,15 @@ class GrowthModel(PredictiveAnalysis):
         mlflow.log_artifact(scaler_path, artifact_path="model")
         logger.info(f"Scaler saved to {scaler_path}")
 
-    def _normalize_X_test(self, X_test, pipeline: Pipeline):
-        if len(X_test) == 0:
-            raise ValueError("Testing data is empty.")
-        try:
-            X_test = pipeline.transform(X_test)
-        except Exception:
-            logger.exception("Error normalizing X_test")
-            raise
-        return X_test, pipeline
+    def perform(self, options: dict, model):
+        self.data_source = model
 
-    def perform(self, lag, rolling_mean, sequence_length, month, year):
-        self.find_best_params(lag, rolling_mean, sequence_length, month, year)
+        self.find_best_params(options)
 
     def report(self):
         pass
+    
+    def is3Dim(self, data: np.ndarray):
+        if data.ndim != 3:
+            return False
+        return True 
