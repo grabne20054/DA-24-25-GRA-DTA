@@ -35,7 +35,7 @@ class OrdersAmount(DescriptiveAnalysis):
         except Exception as e:
             print("Error: ", e)
 
-    def perform(self, last_days: int = 0, year: bool = False, month: bool = False, showzeros: bool = False, machine_learning: bool = False) -> dict:
+    def perform(self, last_days: int = 0, year: bool = False, month: bool = False, showzeros: bool = False, machine_learning: bool = False, percentage: bool = False) -> dict:
         """
         Perform the analysis
 
@@ -45,9 +45,11 @@ class OrdersAmount(DescriptiveAnalysis):
             month (bool, optional): If True, returns the monthly growth. Defaults to False.
             showzeros (bool, optional): If True, shows the days with zero growth. Defaults to False.
             machine_learning (bool, optional): If True, cumulative growth is not calculated. Defaults to False.
+            percentage (bool, optional): If True, shows the percentage growth in relation to the previous period. Defaults to False.
 
         Returns:
-            dict: Dictionary containing growth as dictionary and cumulative growth data as dictionary
+            dict: Dictionary containing growth as dictionary and cumulative growth data as dictionary if percentage is False, otherwise growth as dictionary with percentage growth and cumulative growth as dictionary with cumulative growth data. The type of graph is also included in the dictionary.
+
 s
         Raises:
             ValueError: If the number of days is less than zero
@@ -65,19 +67,18 @@ s
             return None
 
         if year:
-            return self._getYearlyGrowth(data, showzeros)
+            return self._getYearlyGrowth(data, showzeros, percentage)
         
         elif month:
-            return self._getMonthlyGrowth(data, showzeros)
+            return self._getMonthlyGrowth(data, showzeros, percentage)
         
         else:
-            return self._getGrowthByDays(data, last_days, showzeros)
-        
+            return self._getGrowthByDays(data, last_days, showzeros, percentage)
 
     def report(self):
         pass
 
-    def _getYearlyGrowth(self, data: list, showzeros: bool = False) -> dict:
+    def _getYearlyGrowth(self, data: list, showzeros: bool = False, percentage: bool = False) -> dict:
         """
         gets the yearly growth of the orders
         
@@ -85,6 +86,7 @@ s
         Args:
             data (list): List of dictionaries containing the data
             showzeros (bool) : If True, shows the years with zero growth
+            percentage (bool) : If True, shows the percentage growth in relation to the previous year
             
         Returns:
             dict: Dictionary containing the growth and cumulative growth data
@@ -118,9 +120,9 @@ s
         except Exception as e:
             print("Error in _getYearlyGrowth with showzeros: ", e)
 
-        return {"growth": dict(yearlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
-    
-    def _getMonthlyGrowth(self, data: list, showzeros: bool = False) -> dict:
+        return {"growth": self._calculate_percentage_growth(yearlygrowth) if percentage else dict(yearlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
+
+    def _getMonthlyGrowth(self, data: list, showzeros: bool = False, percentage: bool = False) -> dict:
         """
         gets the monthly growth of the orders
 
@@ -160,10 +162,10 @@ s
 
         except Exception as e:
             print("Error in _getMonthlyGrowth with showzeros: ", e)
-        
-        return {"growth": dict(monthlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
-    
-    def _getGrowthByDays(self, data: list, last_days: int, showzeros: bool = False) -> dict:
+
+        return {"growth": self._calculate_percentage_growth(monthlygrowth) if percentage else dict(monthlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
+
+    def _getGrowthByDays(self, data: list, last_days: int, showzeros: bool = False, percentage: bool = False) -> dict:
         """
         gets the growth of the orders by the number of days
 
@@ -215,9 +217,9 @@ s
         
         except Exception as e:
             print("Error in _getGrowthByDays with showzeros: ", e)
-        
-        return {"growth": dict(growth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
-    
+
+        return {"growth": self._calculate_percentage_growth(dict(growth)) if percentage else dict(growth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
+
     def _showzeros(self, growth: defaultdict, cumulative_growth: dict, end: datetime, freq: str, format: str, last_days: int = 0) -> tuple:
         """
         Fills in the missing dates with zero growth and forward fills the cumulative growth values.
@@ -280,3 +282,46 @@ s
                 cumulative_growth = df_cumulative_growth_filled.to_dict()['cumulative_growth']
 
         return growth, cumulative_growth
+    
+    def _calculate_percentage_growth(self, growth: dict) -> dict:
+        """
+        Calculates the percentage growth in relation to the previous period.
+
+        Args:
+            growth (dict): A dictionary containing the growth data.
+
+        Returns:
+            dict: A dictionary containing the percentage growth and growth data.
+            Example: {
+                "2023": [0, 100],
+                "2024": [100.0, 200]
+            }
+        """
+        first_item = True
+        try:
+            percentage_growth = {}
+            key_list = list(growth.keys())
+            for i in range(len(key_list)):
+                key = key_list[i]
+                if first_item:
+                    percentage_growth[key] = 0
+                    first_item = False
+                else:
+                    previous_key = key_list[i-1]
+                    if growth[previous_key] == 0:
+                        percentage_growth[key] = 0
+                    else:
+                        percentage_growth[key] = round((growth[key] - growth[previous_key]) / growth[previous_key] * 100, 1)
+            
+            df = pd.DataFrame.from_dict(percentage_growth, orient='index', columns=['percentage_growth'])
+
+            df_growth = pd.DataFrame.from_dict(growth, orient='index', columns=['growth'])
+
+            df_combined = pd.concat([df, df_growth], axis=1)
+
+            result = df_combined.apply(lambda row: [row["percentage_growth"], row["growth"]], axis=1).to_dict()
+
+            return result
+        except Exception as e:
+            print("Error in _calculate_percentage_growth: ", e)
+            return {}
