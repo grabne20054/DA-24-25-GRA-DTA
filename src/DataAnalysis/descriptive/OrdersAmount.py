@@ -1,5 +1,7 @@
 from DataAnalysis.descriptive.DescriptiveAnalysis import DescriptiveAnalysis
-from DataAnalysis.preprocessing.APIDataHandlerFactory import APIDataHandlerFactory
+from DataAnalysis.DataCollector import DataCollector
+from DataAnalysis.db.models.OrderAmount import OrderAmountRepository
+from DataAnalysis.db.models.queryparams import OrderAmount as OrderAmountParams
 
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -12,24 +14,23 @@ load_dotenv()
 TYPEOFGRAPH = "line"
 
 
-class OrdersAmount(DescriptiveAnalysis):
+class OrdersAmount(DataCollector, DescriptiveAnalysis):
     """ Trend of Orders Growth
     """
     def __init__(self) -> None:
-        self.handler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/orders")
+        super().__init__()
 
-    def collect(self) -> list:
+    def collect(self) -> list[OrderAmountParams]:
         """
-        Collects data from the API
+        Collects data from the DB
 
         Returns:
             list: List of dictionaries containing the data
         """
         try:
-            return self.handler.start()
+            return OrderAmountRepository(self.db).get()
         except ConnectionRefusedError as e:
             print("Connection refused: ", e)
-
         except ConnectionError as e:
             print("Connection error: ", e)
         except Exception as e:
@@ -61,7 +62,7 @@ s
             raise Exception("No data found")
 
         try:
-            data.sort(key=lambda i: i['orderDate']) # Sort by orderDate
+            data.sort(key=lambda i: i.orderDate) # Sort by orderDate
         except AttributeError as e:
             print("Attribute Error: ", e)
             return None
@@ -78,7 +79,7 @@ s
     def report(self):
         pass
 
-    def _getYearlyGrowth(self, data: list, showzeros: bool = False, percentage: bool = False) -> dict:
+    def _getYearlyGrowth(self, data: list[OrderAmountParams], showzeros: bool = False, percentage: bool = False) -> dict:
         """
         gets the yearly growth of the orders
         
@@ -98,9 +99,9 @@ s
 
         try:
             for i in data:
-                if i['orderDate'] <= datetime.now():
-                    year = i['orderDate'].year
-                    
+                if i.orderDate <= datetime.now():
+                    year = i.orderDate.year
+
                     yearlygrowth[year] += 1
                     if not self.machine_learning:
                         total += 1
@@ -122,7 +123,7 @@ s
 
         return {"growth": self._calculate_percentage_growth(yearlygrowth) if percentage else dict(yearlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
 
-    def _getMonthlyGrowth(self, data: list, showzeros: bool = False, percentage: bool = False) -> dict:
+    def _getMonthlyGrowth(self, data: list[OrderAmountParams], showzeros: bool = False, percentage: bool = False) -> dict:
         """
         gets the monthly growth of the orders
 
@@ -141,8 +142,8 @@ s
         try:
 
             for i in data:
-                month = i['orderDate'].strftime("%Y-%m")
-                if i['orderDate'] <= datetime.now():
+                month = i.orderDate.strftime("%Y-%m")
+                if i.orderDate <= datetime.now():
                     if not self.machine_learning:
                         total += 1
                         cumulative_growth[month] = total
@@ -165,7 +166,7 @@ s
 
         return {"growth": self._calculate_percentage_growth(monthlygrowth) if percentage else dict(monthlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
 
-    def _getGrowthByDays(self, data: list, last_days: int, showzeros: bool = False, percentage: bool = False) -> dict:
+    def _getGrowthByDays(self, data: list[OrderAmountParams], last_days: int, showzeros: bool = False, percentage: bool = False) -> dict:
         """
         gets the growth of the orders by the number of days
 
@@ -191,16 +192,16 @@ s
 
         try:
             for i in data:
-                if i['orderDate'].date() <= datetime.now().date():
+                if i.orderDate.date() <= datetime.now().date():
                     if not self.machine_learning:
                         total += 1
-                        cumulative_growth[i['orderDate'].date()] = total
+                        cumulative_growth[i.orderDate.date()] = total
 
                     if last_days > 0 and showzeros is False:
-                        if i['orderDate'].date() >= datetime.now().date() - timedelta(days=last_days):
-                            growth[i['orderDate'].date()] += 1
+                        if i.orderDate.date() >= datetime.now().date() - timedelta(days=last_days):
+                            growth[i.orderDate.date()] += 1
                     elif showzeros or last_days == 0:
-                        growth[i['orderDate'].date()] += 1
+                        growth[i.orderDate.date()] += 1
         except Exception as e:
             print("Error in _getGrowthByDays: ", e)
             
