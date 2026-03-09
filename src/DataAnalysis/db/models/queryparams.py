@@ -18,3 +18,12 @@ class Roles(BaseModel):
 class ProductsAmount(BaseModel):
     name: str
     stock: int
+
+class ProductsMostlyBought(BaseModel):
+    productId: uuid4
+    name: str
+
+class OrdersProducts(BaseModel):
+    orderDate: datetime
+    productId: str
+    productAmount: int

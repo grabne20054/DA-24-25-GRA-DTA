@@ -1,5 +1,6 @@
-from DataAnalysis.preprocessing.APIDataHandlerFactory import APIDataHandlerFactory
-from DataAnalysis.descriptive.DescriptiveAnalysis import DescriptiveAnalysis
+from DataAnalysis.DataCollector import DataCollector
+from DataAnalysis.db.models.ProductsMostlyBought import ProductsMostlyBoughtRepository
+from DataAnalysis.db.models.queryparams import ProductsMostlyBought as ProductsMostlyBoughtParams, OrdersProducts as OrdersProductsParams
 from datetime import datetime, timedelta
 from os import getenv
 
@@ -8,22 +9,21 @@ load_dotenv()
 
 TYPEOFGRAPH = "bar"
 
-class ProductsMostlyBought(DescriptiveAnalysis):
+class ProductsMostlyBought(DataCollector):
     """ Products Mostly Bought
     """
     def __init__(self) -> None:
-        self.handler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/ordersProducts")
-        self.productshandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/products")
-    
-    def collect(self) -> list:
+        super().__init__()
+
+    def collect(self) -> tuple[list[ProductsMostlyBoughtParams], list[OrdersProductsParams]]:
         """
-        Collects data from the API
+        Collects data from the DB
 
         Returns:
             list: List of dictionaries containing the data
         """
         try:
-            return self.handler.start()
+            return ProductsMostlyBoughtRepository(self.db).get(), ProductsMostlyBoughtRepository(self.db).getOrdersProducts()
         except ConnectionRefusedError as e:
             print("Connection refused: ", e)
 
@@ -46,7 +46,8 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         Returns:
             dict: Dictionary containing the products mostly bought
         """
-        data = self.collect()
+        products, data = self.collect()
+        self.products = products
         if data == None:
             raise Exception("No data found")
         
@@ -79,15 +80,15 @@ class ProductsMostlyBought(DescriptiveAnalysis):
             Exception: Order not found
             ValueError: The number of days should be greater than zero
         """
-        products = self.productshandler.start()
+        products = self.products
 
         for i in products:
-            if i['productId'] == product_id:
-                return i['name']
+            if i.productId == product_id:
+                return i.name
         
         raise Exception("Product not found")
 
-    def _getYearlyPurchases(self, data: list, limit) -> dict:
+    def _getYearlyPurchases(self, data: list[OrdersProductsParams], limit) -> dict:
         """
         gets the yearly purchases of the products
         
@@ -104,12 +105,12 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         products_bought = {}
         seen = set()
         for i in data:
-            if i['orderDate'].year == datetime.now().year:
-                if i['productId'] not in seen:
-                    products_bought[i['productId']] = i['productAmount']
-                    seen.add(i['productId'])
+            if i.orderDate.year == datetime.now().year:
+                if i.productId not in seen:
+                    products_bought[i.productId] = i.productAmount
+                    seen.add(i.productId)
                 else:
-                    products_bought[i['productId']] += i['productAmount']
+                    products_bought[i.productId] += i.productAmount
 
         products_bought = dict(list(sorted(products_bought.items(), key=lambda item: item[1], reverse=True))[:limit])
 
@@ -121,7 +122,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
 
         return {"products" : products_bought, "typeofgraph" : TYPEOFGRAPH}
     
-    def _getMonthlyPurchases(self, data: list, limit) -> dict:
+    def _getMonthlyPurchases(self, data: list[OrdersProductsParams], limit) -> dict:
         """
         gets the monthly purchases of the products
 
@@ -135,12 +136,12 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         products_bought = {}
         seen = set()
         for i in data:
-            if i['orderDate'].month == self._getCurrentMonth() and i['orderDate'].year == datetime.now().year:
-                if i['productId'] not in seen:
-                    products_bought[i['productId']] = i['productAmount']
-                    seen.add(i['productId'])
+            if i.orderDate.month == self._getCurrentMonth() and i.orderDate.year == datetime.now().year:
+                if i.productId not in seen:
+                    products_bought[i.productId] = i.productAmount
+                    seen.add(i.productId)
                 else:
-                    products_bought[i['productId']] += i['productAmount']
+                    products_bought[i.productId] += i.productAmount
 
         products_bought = dict(list(sorted(products_bought.items(), key=lambda item: item[1], reverse=True))[:limit])
 
@@ -152,7 +153,7 @@ class ProductsMostlyBought(DescriptiveAnalysis):
 
         return {"products" : products_bought, "typeofgraph" : TYPEOFGRAPH}
     
-    def _getPurchasesByDays(self, data: list, last_days: int, limit) -> dict:
+    def _getPurchasesByDays(self, data: list[OrdersProductsParams], last_days: int, limit) -> dict:
         """
         gets the purchases of the products by the number of days
 
@@ -180,18 +181,18 @@ class ProductsMostlyBought(DescriptiveAnalysis):
         seen = set()
         for i in data:
             if last_days > 0:
-                if i['orderDate'] >= datetime.now() - timedelta(days=last_days) and i['orderDate'] <= datetime.now():
-                    if i['productId'] not in seen:
-                        products_bought[i['productId']] = i['productAmount']
-                        seen.add(i['productId'])
+                if i.orderDate >= datetime.now() - timedelta(days=last_days) and i.orderDate <= datetime.now():
+                    if i.productId not in seen:
+                        products_bought[i.productId] = i.productAmount
+                        seen.add(i.productId)
                     else:
-                        products_bought[i['productId']] += i['productAmount']
+                        products_bought[i.productId] += i.productAmount
             elif last_days == 0:
-                if i['productId'] not in seen:
-                    products_bought[i['productId']] = i['productAmount']
-                    seen.add(i['productId'])
+                if i.productId not in seen:
+                    products_bought[i.productId] = i.productAmount
+                    seen.add(i.productId)
                 else:
-                    products_bought[i['productId']] += i['productAmount']
+                    products_bought[i.productId] += i.productAmount
             elif last_days < 0:
                 raise ValueError("The number of days should be greater than zero")
             
