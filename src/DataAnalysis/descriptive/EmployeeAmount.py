@@ -1,5 +1,6 @@
-from DataAnalysis.preprocessing.APIDataHandlerFactory import APIDataHandlerFactory
-from DataAnalysis.descriptive.DescriptiveAnalysis import DescriptiveAnalysis
+from DataAnalysis.db.models.EmployeeAmount import EmployeeAmountRepository
+from DataAnalysis.db.models.queryparams import EmployeeAmount as EmployeeAmountParams
+from DataAnalysis.DataCollector import DataCollector
 from collections import Counter
 import pandas as pd
 from os import getenv
@@ -8,29 +9,24 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TYPEOFGRAPH = "bar"
-############# DEPRECATED ######################
 
-class EmployeeAmount(DescriptiveAnalysis):
+class EmployeeAmount(DataCollector):
     """ Amount of Employees by Role
     """
     def __init__(self) -> None:
-        self.handler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/employees")
-        self.roleshandler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/roles")
+        super().__init__()
 
-    def collect(self, handler=None) -> list:
+    def collect(self) -> list:
         """
         Collects data from the API
 
         Returns:
             list: List of dictionaries containing the data
         """
-        if handler is None:
-            handler = self.handler
         try:
-            return handler.start()
+            return EmployeeAmountRepository(self.db).get(), EmployeeAmountRepository(self.db).getRoles()
         except ConnectionRefusedError as e:
             print("Connection refused: ", e)
-
         except ConnectionError as e:
             print("Connection error: ", e)
         except Exception as e:
@@ -43,13 +39,12 @@ class EmployeeAmount(DescriptiveAnalysis):
         Returns:
             dict: Dictionary containing the roles and the amount of employees
         """
-        data = self.collect()
-        roles = self.collect(self.roleshandler)
+        data, roles = self.collect()
         if data == None or roles == None:
             raise Exception("No data found")
 
-        employees_df = pd.DataFrame(data)
-        roles_df = pd.DataFrame(roles)
+        employees_df = pd.DataFrame([i.__dict__ for i in data], columns=["roleId"])
+        roles_df = pd.DataFrame([i.__dict__ for i in roles], columns=["id", "name"])
 
         merged_df = pd.concat([employees_df, roles_df], axis=1)
 

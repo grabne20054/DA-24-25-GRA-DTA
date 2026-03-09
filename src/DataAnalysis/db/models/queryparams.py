@@ -1,8 +1,16 @@
 from pydantic import BaseModel
 from datetime import datetime
+from uuid import uuid4
 
 class CustomerSignup(BaseModel):
     signedUp: datetime
 
 class OrderAmount(BaseModel):
     orderDate: datetime
+
+class EmployeeAmount(BaseModel):
+    roleId: uuid4
+
+class Roles(BaseModel):
+    id: uuid4
+    name: str

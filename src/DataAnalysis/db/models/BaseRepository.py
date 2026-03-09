@@ -11,3 +11,7 @@ class BaseRepository(Generic[T]):
     def filter(self, **filters) -> List[T]:
         data = self.session.query(self.model).filter_by(**filters).all()
         return data
+
+    def get_from_custom_model(self, model: Type[T]) -> List[T]:
+        data = self.session.query(model).all()
+        return data
