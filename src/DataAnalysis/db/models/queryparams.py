@@ -14,3 +14,7 @@ class EmployeeAmount(BaseModel):
 class Roles(BaseModel):
     id: uuid4
     name: str
+
+class ProductsAmount(BaseModel):
+    name: str
+    stock: int
