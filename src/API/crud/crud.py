@@ -6,6 +6,9 @@ from DataAnalysis.diagnostic import ProductOrdersCorrelation, ItemBoughtCorrelat
 
 from DataAnalysis.predictive.PredictiveEngine.DataPredictor import DataPredictor
 
+from DataAnalysis.db.models.Auth import AuthRepository
+from DataAnalysis.dependencies import get_db
+
 from api.auth import generate_jwt_token
 
 from dotenv import load_dotenv
@@ -120,22 +123,12 @@ async def get_cumulative_orders_growth(one_day: bool = False, seven_days: bool =
         raise HTTPException(status_code=400, detail=str(e))
 
 async def authenticate(email:str, password: str):
-    try:
-        response = requests.get(f"{getenv('APIURL')}/employees/?email={email}&password={password}&token={getenv('API_KEY')}")
-        response = response.json()
-        if len(response) == 0:
-            raise HTTPException(status_code=401, detail="Wrong credentials")
-    except ConnectionError as e:
-        raise HTTPException(status_code=400, detail="Error connecting to the database")
-    except KeyError as e:
-        raise HTTPException(status_code=400, detail="Error connecting to the database")
-    try:
-        if response[0]['role'] == 'admin':
-            return generate_jwt_token(email=email)
-    except KeyError:
-        response = requests.get(f"{getenv('APIURL')}/roles/name/ADMIN/?token={getenv('API_KEY')}")
-        response = response.json()
-        if len(response) == 0:
-            raise HTTPException(status_code=401, detail="Not authorized")
-        elif response['name'] == 'ADMIN':
-            return generate_jwt_token(email=email)
+    res = AuthRepository(session=next(get_db()), email=email, password=password).get()
+    if res is None:
+        raise HTTPException(status_code=401, detail="Wrong credentials")
+    if len(res) == 0:
+        raise HTTPException(status_code=401, detail="Wrong credentials")
+    elif str(res[1]).strip().lower() == "admin":
+        return generate_jwt_token(email=email)
+    else:
+        raise HTTPException(status_code=401, detail="Not authorized")
