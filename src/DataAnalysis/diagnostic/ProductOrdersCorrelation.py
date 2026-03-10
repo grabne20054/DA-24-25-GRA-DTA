@@ -7,6 +7,8 @@ from os import getenv
 
 from dotenv import load_dotenv
 
+PendingDeprecationWarning("DiagnosticAnalysis is deprecated and will be removed in a future release")
+
 load_dotenv()
 
 LOWER_BOUND = -1
