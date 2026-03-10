@@ -40,3 +40,10 @@ class ProductsParam(BaseModel):
 class OrdersProductsParam(BaseModel):
     orderId: uuid4
     productId: uuid4
+
+
+# AUTH
+
+class AuthParams(BaseModel):
+    email: str
+    password: str

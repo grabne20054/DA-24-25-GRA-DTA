@@ -67,8 +67,8 @@ class Employee(Base):
     employeeId: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, unique=True, nullable=False, default=uuid.uuid4)
     #firstName: Mapped[str] = mapped_column(String(255),nullable=False)
     #lastName: Mapped[str] = mapped_column(String(255),nullable=False)
-    #password: Mapped[str] = mapped_column(String(255), nullable=False)
-    #email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     roleId: Mapped[UUID] = mapped_column(ForeignKey("roles.id"), nullable=False)
     #deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
