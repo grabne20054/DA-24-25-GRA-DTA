@@ -1,5 +1,7 @@
 from enum import Enum
 
+DeprecationWarning("REMOVINGS is deprecated. REMOVINGS will be removed in future versions.")
+
 class REMOVINGS(Enum):
     """
     Enum class for removing values

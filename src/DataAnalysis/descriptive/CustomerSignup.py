@@ -1,10 +1,11 @@
 from DataAnalysis.descriptive.DescriptiveAnalysis import DescriptiveAnalysis
-from DataAnalysis.preprocessing.APIDataHandlerFactory import APIDataHandlerFactory
+from DataAnalysis.DataCollector import DataCollector
+from DataAnalysis.db.models.CustomerSignup import CustomerSignupRepository
+from DataAnalysis.db.models.queryparams import CustomerSignup as CustomerSignupParams
 
 from datetime import datetime, timedelta
 from collections import defaultdict
 import pandas as pd
-from os import getenv
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -12,24 +13,23 @@ load_dotenv()
 TYPEOFGRAPH = "line"
 
 
-class CustomerSignup(DescriptiveAnalysis):
+class CustomerSignup(DataCollector):
     """ Trend of Customer Growth
     """
     def __init__(self) -> None:
-        self.handler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/customers")
+        super().__init__()
 
-    def collect(self) -> list:
+    def collect(self) -> list[CustomerSignupParams]:
         """
-        Collects data from the API
+        Collects data from the DB
 
         Returns:
             list: List of dictionaries containing the data
         """
         try:
-            return self.handler.start()
+            return CustomerSignupRepository(self.db).get()
         except ConnectionRefusedError as e:
             print("Connection refused: ", e)
-
         except ConnectionError as e:
             print("Connection error: ", e)
         except Exception as e:
@@ -63,7 +63,7 @@ class CustomerSignup(DescriptiveAnalysis):
             raise ValueError("The number of days should be greater than zero")
 
         try:
-            data.sort(key=lambda i: i['signedUp']) # Sort by signedUp date
+            data.sort(key=lambda i: i.signedUp) # Sort by signedUp date
         except AttributeError as e:
             print("Attribute Error: ", e)
             return e
@@ -85,7 +85,7 @@ class CustomerSignup(DescriptiveAnalysis):
     def report(self):
         pass
 
-    def _getYearlyGrowth(self, data: list, showzeros: bool = False, percentage: bool = False) -> dict:
+    def _getYearlyGrowth(self, data: list[CustomerSignupParams], showzeros: bool = False, percentage: bool = False) -> dict:
         """
         gets the yearly growth of the customers
         
@@ -104,8 +104,8 @@ class CustomerSignup(DescriptiveAnalysis):
         total = 0 
         try:
             for i in data:
-                if i['signedUp'] <= datetime.now():
-                    year = i['signedUp'].year
+                if i.signedUp <= datetime.now():
+                    year = i.signedUp.year
                     
                     yearlygrowth[year] += 1
                     if not self.machine_learning:
@@ -128,7 +128,7 @@ class CustomerSignup(DescriptiveAnalysis):
 
         return {"growth": self._calculate_percentage_growth(dict(yearlygrowth)) if percentage else dict(yearlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
 
-    def _getMonthlyGrowth(self, data: list, showzeros: bool = True, percentage: bool = False) -> dict:
+    def _getMonthlyGrowth(self, data: list[CustomerSignupParams], showzeros: bool = True, percentage: bool = False) -> dict:
         """
         gets the monthly growth of the customers
 
@@ -146,9 +146,9 @@ class CustomerSignup(DescriptiveAnalysis):
         total = 0
         try:
             for i in data:
-                month = i['signedUp'].strftime("%Y-%m")
+                month = i.signedUp.strftime("%Y-%m")
 
-                if i['signedUp'] <= datetime.now():
+                if i.signedUp <= datetime.now():
                     if not self.machine_learning:
                         total += 1
                         cumulative_growth[month] = total
@@ -171,7 +171,7 @@ class CustomerSignup(DescriptiveAnalysis):
 
         return {"growth": self._calculate_percentage_growth(dict(monthlygrowth)) if percentage else dict(monthlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
 
-    def _getGrowthByDays(self, data: list, last_days: int, showzeros: bool = False, percentage: bool = False) -> dict:
+    def _getGrowthByDays(self, data: list[CustomerSignupParams], last_days: int, showzeros: bool = False, percentage: bool = False) -> dict:
         """
         gets the growth of the customers by the number of days
 
@@ -198,16 +198,16 @@ class CustomerSignup(DescriptiveAnalysis):
 
         try:
             for i in data:
-                    if i['signedUp'].date() <= datetime.now().date():
+                    if i.signedUp.date() <= datetime.now().date():
                         if not self.machine_learning:
                             total += 1
-                            cumulative_growth[i['signedUp'].date()] = total
+                            cumulative_growth[i.signedUp.date()] = total
 
                         if last_days > 0 and showzeros is False:
-                            if i['signedUp'].date() >= datetime.now().date() - timedelta(days=last_days):
-                                growth[i['signedUp'].date()] += 1
+                            if i.signedUp.date() >= datetime.now().date() - timedelta(days=last_days):
+                                growth[i.signedUp.date()] += 1
                         elif showzeros or last_days == 0:
-                            growth[i['signedUp'].date()] += 1
+                            growth[i.signedUp.date()] += 1
         except Exception as e:
             print("Error in _getGrowthByDays: ", e)
         

@@ -1,5 +1,7 @@
 from DataAnalysis.preprocessing.APIDataHandler import APIDataHandler
 
+DeprecationWarning("APIDataHandlerFactory is deprecated. APIDataHandlerFactory will be removed in future versions.")
+
 class APIDataHandlerFactory:
     """ Factory for creating APIDataHandler objects"""
     @staticmethod

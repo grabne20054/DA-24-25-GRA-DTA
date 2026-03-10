@@ -39,8 +39,10 @@ async def get_orders_amount(last_days: int = 0, month: bool = False, year: bool 
         raise HTTPException(status_code=400, detail="Invalid parameters: year cannot be True if last_days is greater than 0")
     return OrdersAmount.OrdersAmount().perform(last_days=last_days, month=month, year=year, showzeros=showzeros, percentage=percentage)
 
-async def get_employees_amount():
-    return EmployeeAmount.EmployeeAmount().perform()
+async def get_employees_amount(limit: int = 5):
+    if limit < 0:
+        raise HTTPException(status_code=400, detail="Invalid parameters: limit cannot be negative")
+    return EmployeeAmount.EmployeeAmount().perform(limit=limit)
 
 async def get_products_amount(limit: int = 5, well_stocked: bool = False, out_of_stock: bool = False):
     return ProductsAmount.ProductsAmount().perform(limit=limit, well_stocked=well_stocked, out_of_stock=out_of_stock)
