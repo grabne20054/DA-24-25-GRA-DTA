@@ -16,7 +16,7 @@ class EmployeeAmount(DataCollector):
     def __init__(self) -> None:
         super().__init__()
 
-    def collect(self) -> list:
+    def collect(self, limit: int) -> list[EmployeeAmountParams]:
         """
         Collects data from the API
 
@@ -24,7 +24,7 @@ class EmployeeAmount(DataCollector):
             list: List of dictionaries containing the data
         """
         try:
-            return EmployeeAmountRepository(self.db).get(), EmployeeAmountRepository(self.db).getRoles()
+            return EmployeeAmountRepository(self.db, limit=limit).get()
         except ConnectionRefusedError as e:
             print("Connection refused: ", e)
         except ConnectionError as e:
@@ -32,30 +32,23 @@ class EmployeeAmount(DataCollector):
         except Exception as e:
             print("Error: ", e)
     
-    def perform(self) -> dict:
+    def perform(self, limit:int) -> dict:
         """
         Perform the analysis
 
         Returns:
             dict: Dictionary containing the roles and the amount of employees
         """
-        data, roles = self.collect()
-        if data == None or roles == None:
+        data = self.collect(limit=limit)
+        if data == None:
             raise Exception("No data found")
 
-        employees_df = pd.DataFrame([i.__dict__ for i in data], columns=["roleId"])
-        roles_df = pd.DataFrame([i.__dict__ for i in roles], columns=["id", "name"])
+        result = {}
 
-        merged_df = pd.concat([employees_df, roles_df], axis=1)
-
-        merged_df["role"] = merged_df["roleId"].map(roles_df.set_index("id")["name"])
-        employees = dict(Counter(merged_df["role"]))
-
-        if employees == {}:
-            raise Exception("No Employees found")
-
-        result = {role: count for role, count in employees.items()}
+        for i in data:
+            result[i.name] = i.employee_count
         result["typeofgraph"] = TYPEOFGRAPH
+
         return result
 
 

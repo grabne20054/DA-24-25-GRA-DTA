@@ -9,11 +9,8 @@ class OrderAmount(BaseModel):
     orderDate: datetime
 
 class EmployeeAmount(BaseModel):
-    roleId: uuid4
-
-class Roles(BaseModel):
-    id: uuid4
     name: str
+    employee_count: int
 
 class ProductsAmount(BaseModel):
     name: str

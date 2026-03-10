@@ -10,7 +10,6 @@ class RoutesAmountRepository(BaseRepository[Route]):
 
     def get(self) -> list[RoutesAmountParams]:
         try:
-           
             result = (
                 self.session.query(Route.name, func.count(routesOrders.c.orderId).label("order_count"))
                 .join(routesOrders, Route.routeId == routesOrders.c.routeId)
