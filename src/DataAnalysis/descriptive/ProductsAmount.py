@@ -1,5 +1,6 @@
-from DataAnalysis.preprocessing.APIDataHandlerFactory import APIDataHandlerFactory
-from DataAnalysis.descriptive.DescriptiveAnalysis import DescriptiveAnalysis
+from DataAnalysis.DataCollector import DataCollector
+from DataAnalysis.db.models.ProductsAmount import ProductsAmountRepository
+from DataAnalysis.db.models.queryparams import ProductsAmount as ProductsAmountParams
 
 from os import getenv
 
@@ -8,13 +9,13 @@ load_dotenv()
 
 TYPEOFGRAPH = "bar"
 
-class ProductsAmount(DescriptiveAnalysis):
+class ProductsAmount(DataCollector):
     """ Amount of Products
     """
     def __init__(self) -> None:
-        self.handler = APIDataHandlerFactory.create_data_handler(getenv("APIURL") + "/products")
+        super().__init__()
 
-    def collect(self) -> list:
+    def collect(self) -> list[ProductsAmountParams]:
         """
         Collects data from the API
         
@@ -22,7 +23,7 @@ class ProductsAmount(DescriptiveAnalysis):
             list: List of dictionaries containing the data
         """
         try:
-            return self.handler.start()
+            return ProductsAmountRepository(self.db).get()
         except ConnectionRefusedError as e:
             print("Connection refused: ", e)    
 
@@ -62,7 +63,7 @@ class ProductsAmount(DescriptiveAnalysis):
         products = {}
 
         for i in data:    
-            products[i['name']] = i['stock']
+            products[i.name] = i.stock
 
         if well_stocked:
             products_res = dict(sorted(products.items(), key=lambda item: item[1], reverse=True)[:limit])

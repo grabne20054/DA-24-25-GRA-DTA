@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+DeprecationWarning("APIDataHandler is deprecated. APIDataHandler will be removed in future versions.")
+
 class APIDataHandler:
     """
     Class to handle API data
