@@ -28,3 +28,15 @@ class OrdersProducts(BaseModel):
 class RoutesAmount(BaseModel):
     name: str
     order_count: int
+
+# ItemBought Correlation
+
+class OrdersParam(BaseModel):
+    orderId: uuid4
+
+class ProductsParam(BaseModel):
+    productId: uuid4
+
+class OrdersProductsParam(BaseModel):
+    orderId: uuid4
+    productId: uuid4
