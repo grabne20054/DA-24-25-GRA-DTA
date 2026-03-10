@@ -27,3 +27,7 @@ class OrdersProducts(BaseModel):
     orderDate: datetime
     productId: str
     productAmount: int
+
+class RoutesAmount(BaseModel):
+    name: str
+    order_count: int
