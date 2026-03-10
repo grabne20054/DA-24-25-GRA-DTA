@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime, timedelta
 from collections import defaultdict
 
-from DataAnalysis.descriptive.CustomerSignup import CustomerSignup
+from DataAnalysis.descriptive.OrdersAmount import OrdersAmount
 
 
 # -------------------------
@@ -21,16 +21,16 @@ class MockHandler:
 def sample_data():
     today = datetime.now()
     return [
-        {"signedUp": today - timedelta(days=3)},
-        {"signedUp": today - timedelta(days=2)},
-        {"signedUp": today - timedelta(days=2)},
-        {"signedUp": today - timedelta(days=1)},
-        {"signedUp": today},
+        {"orderDate": today - timedelta(days=3)},
+        {"orderDate": today - timedelta(days=2)},
+        {"orderDate": today - timedelta(days=2)},
+        {"orderDate": today - timedelta(days=1)},
+        {"orderDate": today},
     ]
 
 
 @pytest.fixture
-def customer_signup(monkeypatch, sample_data):
+def orders_amount(monkeypatch, sample_data):
     """
     Monkeypatch the APIDataHandlerFactory to return mock data
     """
@@ -43,21 +43,21 @@ def customer_signup(monkeypatch, sample_data):
         mock_create_data_handler
     )
 
-    return CustomerSignup()
+    return OrdersAmount()
 
 
 # -------------------------
 # Tests
 # -------------------------
 
-def test_collect_returns_data(customer_signup):
-    data = customer_signup.collect()
+def test_collect_returns_data(orders_amount):
+    data = orders_amount.collect()
     assert isinstance(data, list)
     assert len(data) == 5
 
 
-def test_growth_by_days(customer_signup):
-    result = customer_signup.perform()
+def test_growth_by_days(orders_amount   ):
+    result = orders_amount.perform()
 
     assert "growth" in result
     assert "cumulative_growth" in result
@@ -67,8 +67,8 @@ def test_growth_by_days(customer_signup):
     assert sum(result["growth"].values()) == 5
 
 
-def test_growth_last_days_filter(customer_signup):
-    result = customer_signup.perform(last_days=2)
+def test_growth_last_days_filter(orders_amount):
+    result = orders_amount.perform(last_days=2)
 
     assert all(
         key >= (datetime.now().date() - timedelta(days=2))
@@ -76,49 +76,49 @@ def test_growth_last_days_filter(customer_signup):
     )
 
 
-def test_monthly_growth(customer_signup):
-    result = customer_signup.perform(month=True)
+def test_monthly_growth(orders_amount):
+    result = orders_amount.perform(month=True)
 
     assert "growth" in result
     assert len(result["growth"]) >= 1
     assert sum(result["growth"].values()) == 5
 
 
-def test_yearly_growth(customer_signup):
-    result = customer_signup.perform(year=True)
+def test_yearly_growth(orders_amount):
+    result = orders_amount.perform(year=True)
 
     current_year = datetime.now().year
     assert current_year in result["growth"]
     assert result["growth"][current_year] == 5
 
 
-def test_showzeros_daily(customer_signup):
-    result = customer_signup.perform(showzeros=True)
+def test_showzeros_daily(orders_amount):
+    result = orders_amount.perform(showzeros=True)
 
     # Should contain continuous dates
     growth_keys = list(result["growth"].keys())
     assert len(growth_keys) >= 4
 
 
-def test_negative_last_days(customer_signup):
+def test_negative_last_days(orders_amount):
     with pytest.raises(ValueError):
-        customer_signup.perform(last_days=-5)
+        orders_amount.perform(last_days=-5)
 
 
-def test_machine_learning_disables_cumulative(customer_signup):
-    result = customer_signup.perform(machine_learning=True)
+def test_machine_learning_disables_cumulative(orders_amount):
+    result = orders_amount.perform(machine_learning=True)
 
     # cumulative growth should be empty
     assert result["cumulative_growth"] == {}
 
-def test_machine_learning_growth_calculation(customer_signup):
-    result = customer_signup.perform(machine_learning=True)
+def test_machine_learning_growth_calculation(orders_amount):
+    result = orders_amount.perform(machine_learning=True)
 
     # growth should be calculated using the mock data
     assert sum(result["growth"].values()) == 5
 
-def test_percentage_growth_calculation(customer_signup):
-    result = customer_signup.perform(percentage=True)
+def test_percentage_growth_calculation(orders_amount):
+    result = orders_amount.perform(percentage=True)
 
     # percentage growth should be calculated based on the mock data
     assert result["growth"] != {
