@@ -11,7 +11,7 @@ from os import getenv
 
 from DataAnalysis.descriptive.CustomerSignup import CustomerSignup
 from DataAnalysis.descriptive.OrdersAmount import OrdersAmount
-from DataAnalysis.predictive.dependencies import OPTIONS, HORIZONS
+from DataAnalysis.predictive.dependencies import OPTIONS, HORIZONS, MONTHLY_OPTIONS
 
 
 class DataPredictor:
@@ -22,6 +22,7 @@ class DataPredictor:
         self.scaler_y = None
         self.data_analysis = data_analysis
         self.month = month
+        self.options = MONTHLY_OPTIONS if month else OPTIONS
 
     # ---------------------------------------------------------
     # LOAD BEST MODEL FROM MLFLOW
@@ -114,11 +115,8 @@ class DataPredictor:
         return data
 
     def _prepare_features(self, data_dict):
-        if self.month:
-            rolling_mean = OPTIONS["monthly_rolling_mean"]
-        else:
-            rolling_mean = OPTIONS["rolling_mean"]
-        lag = OPTIONS["lag"]
+        rolling_mean = self.options["rolling_mean"]
+        lag = self.options["lag"]
         timestamps = []
         values = []
 
@@ -151,10 +149,8 @@ class DataPredictor:
 
         if self.model is None:
             self.load_best_model()
-        if self.month:
-            seq_len = OPTIONS["monthly_sequence_length"]
-        else:
-            seq_len = OPTIONS["sequence_length"]
+        
+        seq_len = self.options["sequence_length"]
 
         raw_data = self._get_recent_data()
         X_raw, df = self._prepare_features(raw_data)
