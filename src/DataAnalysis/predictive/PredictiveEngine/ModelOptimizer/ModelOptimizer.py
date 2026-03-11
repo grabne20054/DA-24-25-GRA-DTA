@@ -18,9 +18,11 @@ class ModelOptimizer:
         self.customerGrowth = GrowthModel("CustomerGrowth", "growth", data_source=CustomerSignup())
         self.ordersGrowth = GrowthModel("OrdersGrowth", "growth", data_source=OrdersAmount())
 
-    
+        self.customerGrowthMonthly = GrowthModel("CustomerGrowthMonthly", "growth", data_source=CustomerSignup(), month=True)
+        self.ordersGrowthMonthly = GrowthModel("OrdersGrowthMonthly", "growth", data_source=OrdersAmount(), month=True)
+        
     def spawn_optimizer(self):
-        for model in [self.customerGrowth, self.ordersGrowth]:
+        for model in [self.customerGrowth, self.ordersGrowth, self.customerGrowthMonthly, self.ordersGrowthMonthly]:
             t = Thread(target=model.perform, args=(OPTIONS, model))
             t.start()
 

@@ -16,11 +16,12 @@ from DataAnalysis.predictive.dependencies import OPTIONS, HORIZONS
 
 class DataPredictor:
 
-    def __init__(self, data_analysis: str):
+    def __init__(self, data_analysis: str, month: bool = False):
         self.model = None
         self.scaler_X = None
         self.scaler_y = None
         self.data_analysis = data_analysis
+        self.month = month
 
     # ---------------------------------------------------------
     # LOAD BEST MODEL FROM MLFLOW
@@ -40,7 +41,6 @@ class DataPredictor:
             max_results=1,
             order_by=["metrics.val_mse ASC", "metrics.val_mae ASC"]
         )
-
         if not runs:
             raise Exception("No runs found")
 
@@ -96,12 +96,29 @@ class DataPredictor:
                 showzeros=True,
                 machine_learning=True
             )
+        elif self.data_analysis == "CustomerGrowthMonthly":
+            data = CustomerSignup().perform(
+                month=True,
+                showzeros=True,
+                machine_learning=True
+            )
+        elif self.data_analysis == "OrdersGrowthMonthly":
+            data = OrdersAmount().perform(
+                month=True,
+                showzeros=True,
+                machine_learning=True
+            )
         else:
             raise ValueError("Invalid analysis type")
 
         return data
 
     def _prepare_features(self, data_dict):
+        if self.month:
+            rolling_mean = OPTIONS["monthly_rolling_mean"]
+        else:
+            rolling_mean = OPTIONS["rolling_mean"]
+        lag = OPTIONS["lag"]
         timestamps = []
         values = []
 
@@ -114,11 +131,11 @@ class DataPredictor:
             "growth": values
         })
 
-        for i in range(1, OPTIONS["lag"] + 1):
+        for i in range(1, lag + 1):
             df[f"lag_{i}"] = df["growth"].shift(i)
 
         df["rolling_mean"] = df["growth"].rolling(
-            window=OPTIONS["rolling_mean"]
+            window=rolling_mean
         ).mean()
 
         df.dropna(inplace=True)
@@ -134,13 +151,16 @@ class DataPredictor:
 
         if self.model is None:
             self.load_best_model()
+        if self.month:
+            seq_len = OPTIONS["monthly_sequence_length"]
+        else:
+            seq_len = OPTIONS["sequence_length"]
 
         raw_data = self._get_recent_data()
         X_raw, df = self._prepare_features(raw_data)
 
         X_scaled = self.scaler_X.transform(X_raw)
 
-        seq_len = OPTIONS["sequence_length"]
         last_sequence = X_scaled[-seq_len:]
         last_sequence = last_sequence.reshape(1, seq_len, last_sequence.shape[1])
 
@@ -149,14 +169,20 @@ class DataPredictor:
         y_pred = self.scaler_y.inverse_transform(y_pred_scaled)
 
         y_pred = y_pred.flatten()
-
-        last_timestamp = df["timestamp"].iloc[-1]
-        last_date = datetime.fromtimestamp(last_timestamp)
-
         forecast = {}
 
-        for horizon, value in zip(HORIZONS, y_pred):
-            forecast_date = last_date + timedelta(days=horizon)
-            forecast[str(forecast_date.date())] = float(value)
+        if self.month:
+            last_timestamp = datetime(year=datetime.now().year, month=datetime.now().month, day=1)
+            last_date = last_timestamp
+            for i in y_pred:
+                last_date = last_date + timedelta(days=31)
+                forecast[last_date.strftime("%Y-%m")] = float(i)
+        else:
+            last_timestamp = df["timestamp"].iloc[-1]
+            last_date = datetime.fromtimestamp(last_timestamp)
+
+            for horizon, value in zip(HORIZONS, y_pred):
+                forecast_date = last_date + timedelta(days=horizon)
+                forecast[str(forecast_date.date())] = float(value)
 
         return {"predictions": forecast}

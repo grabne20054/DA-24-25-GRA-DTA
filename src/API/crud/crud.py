@@ -77,7 +77,12 @@ async def get_customers_growth():
         return DataPredictor.DataPredictor("CustomerGrowth").predict()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
+    
+async def get_customers_growth_month():
+    try:
+        return DataPredictor.DataPredictor("CustomerGrowthMonthly", month=True).predict()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 async def get_cumulative_customers_growth(one_day: bool = False, seven_days: bool = False, month: bool = False, year: bool = False):
     try:
@@ -101,6 +106,12 @@ async def get_orders_growth():
     try:
 
         return DataPredictor.DataPredictor("OrdersGrowth").predict()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+async def get_orders_growth_month():
+    try:
+        return DataPredictor.DataPredictor("OrdersGrowthMonthly", month=True).predict()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

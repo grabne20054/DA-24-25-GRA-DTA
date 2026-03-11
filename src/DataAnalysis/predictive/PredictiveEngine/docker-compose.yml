@@ -6,6 +6,8 @@ services:
     build:
       context: ../../../
       dockerfile: DataAnalysis/predictive/PredictiveEngine/ModelOptimizer/Dockerfile
+
+    restart: always
       
 volumes:
   shared-volume:

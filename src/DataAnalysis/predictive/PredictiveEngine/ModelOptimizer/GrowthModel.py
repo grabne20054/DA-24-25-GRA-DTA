@@ -65,12 +65,15 @@ load_dotenv()
 # -------------------------------
 class GrowthModel(PredictiveAnalysis):
     def __init__(self, data_analysis: str, growthtype: Literal['growth'], 
-                 data_source: OrdersAmount | CustomerSignup) -> None:
+                 data_source: OrdersAmount | CustomerSignup, month: bool = False) -> None:
         self.data_source = data_source
         self.growthtype = growthtype
         self.data_analysis = data_analysis
         self.setup_mlflow()
+        self.month = month
         self.data = self.collect()
+
+        logger.info(f"Data collected for {self.data_analysis} with month={self.month}: {self.data}")
 
     # -------------------------------
     # MLFlow setup
@@ -89,6 +92,8 @@ class GrowthModel(PredictiveAnalysis):
     # -------------------------------
     def collect(self):
         try:
+            if self.month:
+                return self.data_source.perform(showzeros=True, machine_learning=True, month=True)
             return self.data_source.perform(showzeros=True, machine_learning=True)
         except Exception:
             logger.exception("Error in collect")
@@ -151,6 +156,7 @@ class GrowthModel(PredictiveAnalysis):
 
         X = df.drop(columns=[self.growthtype]).values
         y = df[self.growthtype].values.reshape(-1, 1)
+        logger.info(f"Data prepared with lag={lag} and rolling_mean={rolling_mean}: X shape={X.shape}, y shape={y.shape}")
 
         if X.size == 0 or y.size == 0:
             raise ValueError("Data preparation resulted in empty arrays.")
@@ -182,7 +188,7 @@ class GrowthModel(PredictiveAnalysis):
     # -------------------------------
     # Sequence creation
     # -------------------------------
-    def _create_sequences(self, X_train, y_train, X_test, y_test, sequence_length, horizons=HORIZONS):
+    def _create_sequences_horizons(self, X_train, y_train, X_test, y_test, sequence_length, horizons=HORIZONS):
         if sequence_length <= 0:
             raise ValueError("sequence_length must be > 0")
 
@@ -198,21 +204,45 @@ class GrowthModel(PredictiveAnalysis):
 
         return (np.array(X_train_seq), np.array(y_train_seq),
                 np.array(X_test_seq), np.array(y_test_seq))
+    
+    def _create_sequences(self, X_train, y_train, X_test, y_test, sequence_length):
+        if sequence_length <= 0:
+            raise ValueError("sequence_length must be > 0")
+
+        X_train_seq, y_train_seq = [], []
+        for i in range(len(X_train) - sequence_length):
+            X_train_seq.append(X_train[i:i + sequence_length])
+            y_train_seq.append(y_train[i + sequence_length])
+
+        X_test_seq, y_test_seq = [], []
+        for i in range(len(X_test) - sequence_length):
+            X_test_seq.append(X_test[i:i + sequence_length])
+            y_test_seq.append(y_test[i + sequence_length])
+
+        return (np.array(X_train_seq), np.array(y_train_seq),
+                np.array(X_test_seq), np.array(y_test_seq))
 
     # -------------------------------
     # Pipeline for data
     # -------------------------------
     def provide_data_to_perform(self, lag, rolling_mean, sequence_length):
         X_train, X_test, y_train, y_test = self._train_test_split(lag, rolling_mean)
+        logger.info(f"Train-test split completed: X_train={X_train.shape}, y_train={y_train.shape}, X_test={X_test.shape}, y_test={y_test.shape}")
         if X_train is None or X_test is None or len(X_train) == 0 or len(X_test) == 0:
             raise ValueError("Not enough data.")
         X_train, X_test, scaler_X = self._normalize(X_train, X_test)
         y_train, y_test, scaler_y = self._normalize(y_train, y_test)
 
         # create sequences (will return arrays for train/test sequences)
-        X_train_seq, y_train_seq, X_test_seq, y_test_seq = self._create_sequences(
-            X_train, y_train, X_test, y_test, sequence_length
-        )
+        if self.month:
+            X_train_seq, y_train_seq, X_test_seq, y_test_seq = self._create_sequences(
+                X_train, y_train, X_test, y_test, sequence_length
+            )
+        else:
+            X_train_seq, y_train_seq, X_test_seq, y_test_seq = self._create_sequences_horizons(
+                X_train, y_train, X_test, y_test, sequence_length
+            )
+        logger.info(f"Sequences created: X_train_seq={X_train_seq.shape}, y_train_seq={y_train_seq.shape}, X_test_seq={X_test_seq.shape}, y_test_seq={y_test_seq.shape}")
 
         # Ensure sequences have shape (samples, timesteps, features) for LSTM
         if X_train_seq.ndim == 2:
@@ -232,6 +262,17 @@ class GrowthModel(PredictiveAnalysis):
     # Training and hyperparameter search
     # -------------------------------
     def find_best_params(self, options: dict):
+        if self.month:
+            options["rolling_mean"] = options["monthly_rolling_mean"]
+            options["sequence_length"] = options["monthly_sequence_length"]
+
+            logger.info(f"Using monthly parameters: lag={options['lag']}, rolling_mean={options['rolling_mean']}, sequence_length={options['sequence_length']}")
+        else:
+            options["lag"] = options["lag"]
+            options["rolling_mean"] = options["rolling_mean"]
+            options["sequence_length"] = options["sequence_length"]
+            logger.info(f"Using default parameters: lag={options['lag']}, rolling_mean={options['rolling_mean']}, sequence_length={options['sequence_length']}")
+
         X_train, X_test, y_train, y_test, scaler_X, scaler_y = self.provide_data_to_perform(
                 lag=options["lag"],
                 rolling_mean=options["rolling_mean"],
@@ -263,6 +304,7 @@ class GrowthModel(PredictiveAnalysis):
                 for epoch in EPOCHS:
                     for l2_reg in L2_REG:
                         logger.info(f"Running with {NUM_UNITS} LSTM cells, dropout={dropout}, lr={learning_rate}, l2={l2_reg}")
+                        logger.info(f"Training data shape: {modeldata.X_train.shape}, {modeldata.y_train.shape}")
 
                         model = Sequential()
                         model.add(LSTM(NUM_UNITS, dropout=dropout, return_sequences=False, input_shape=(modeldata.X_train.shape[1], modeldata.X_train.shape[2]), kernel_regularizer=l2(l2_reg)))
@@ -357,7 +399,3 @@ class GrowthModel(PredictiveAnalysis):
     def report(self):
         pass
     
-    def is3Dim(self, data: np.ndarray):
-        if data.ndim != 3:
-            return False
-        return True 

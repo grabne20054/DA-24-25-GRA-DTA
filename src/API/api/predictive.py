@@ -34,6 +34,29 @@ async def get_customers_growth(token: Annotated[str, Depends(is_token_valid)]):
     data = await crud.get_customers_growth()
     return data
 
+@router.get(f"/{VERSION}/{PREDICTIVE}/customers-growth/month/", status_code=212)
+async def get_customers_growth_month(token: Annotated[str, Depends(is_token_valid)]):
+    """
+    Get the customers growth prediction.
+
+    **Args:**
+    - token (str)
+
+    **Raises:**
+    - HTTPException: If there is an error, it will raise a 400 error.
+
+    **Returns:**
+    - dict: containing the customers growth in one month time frame.
+    - Example response:
+    {
+        "predictions": {
+            "2026-04": 2.0544991493225098,
+        }
+    }
+    """
+    data = await crud.get_customers_growth_month()
+    return data
+
 @router.get(f"/{VERSION}/{PREDICTIVE}/cumulative-customers-growth/", status_code=212, deprecated=True)
 async def get_cumulative_customers_growth(token: Annotated[str, Depends(is_token_valid)], one_day: bool = False ,seven_days: bool = False, month: bool = False, year: bool = False):
     """
@@ -83,6 +106,29 @@ async def get_orders_growth(token: Annotated[str, Depends(is_token_valid)]):
     """
     
     data = await crud.get_orders_growth()
+    return data
+
+@router.get(f"/{VERSION}/{PREDICTIVE}/orders-growth/month/", status_code=212)
+async def get_orders_growth_month(token: Annotated[str, Depends(is_token_valid)]):
+    """
+    Get the orders growth prediction.
+
+    **Args:**
+    - token (str)
+
+    **Raises:**
+    - HTTPException: If there is an error, it will raise a 400 error.
+
+    **Returns:**
+    - dict: containing the orders growth in one month time frame.
+    - Example response:
+    {
+        "predictions": {
+            "2026-04": 2.0544991493225098,
+        }
+    }
+    """
+    data = await crud.get_orders_growth_month()
     return data
 
 @router.get(f"/{VERSION}/{PREDICTIVE}/cumulative-orders-growth/", status_code=212, deprecated=True)

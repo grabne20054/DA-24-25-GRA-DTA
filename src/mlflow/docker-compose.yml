@@ -7,3 +7,4 @@ services:
       - "5001:5000"
     volumes:
       - ./src/mlflow/mlruns:/mlflow/mlruns
+    restart: always
