@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 from threading import Thread
 import time
 
-from DataAnalysis.predictive.dependencies import OPTIONS
+from DataAnalysis.predictive.dependencies import OPTIONS, MONTHLY_OPTIONS
 class ModelOptimizer:
     def __init__(self):
         self.customerGrowth = GrowthModel("CustomerGrowth", "growth", data_source=CustomerSignup())
@@ -23,7 +23,7 @@ class ModelOptimizer:
         
     def spawn_optimizer(self):
         for model in [self.customerGrowth, self.ordersGrowth, self.customerGrowthMonthly, self.ordersGrowthMonthly]:
-            t = Thread(target=model.perform, args=(OPTIONS, model))
+            t = Thread(target=model.perform, args=(MONTHLY_OPTIONS if model.month else OPTIONS, model))
             t.start()
 
 

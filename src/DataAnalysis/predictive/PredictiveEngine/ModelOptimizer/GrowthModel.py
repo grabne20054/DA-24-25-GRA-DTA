@@ -262,16 +262,6 @@ class GrowthModel(PredictiveAnalysis):
     # Training and hyperparameter search
     # -------------------------------
     def find_best_params(self, options: dict):
-        if self.month:
-            options["rolling_mean"] = options["monthly_rolling_mean"]
-            options["sequence_length"] = options["monthly_sequence_length"]
-
-            logger.info(f"Using monthly parameters: lag={options['lag']}, rolling_mean={options['rolling_mean']}, sequence_length={options['sequence_length']}")
-        else:
-            options["lag"] = options["lag"]
-            options["rolling_mean"] = options["rolling_mean"]
-            options["sequence_length"] = options["sequence_length"]
-            logger.info(f"Using default parameters: lag={options['lag']}, rolling_mean={options['rolling_mean']}, sequence_length={options['sequence_length']}")
 
         X_train, X_test, y_train, y_test, scaler_X, scaler_y = self.provide_data_to_perform(
                 lag=options["lag"],

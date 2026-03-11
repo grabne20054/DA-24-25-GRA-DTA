@@ -3,9 +3,12 @@ OPTIONS = {
     "lag": 7,
     "sequence_length": 14,
     "rolling_mean": 5,
+}
 
-    "monthly_sequence_length": 1,
-    "monthly_rolling_mean": 3,
+MONTHLY_OPTIONS = {
+    "lag": 7,
+    "sequence_length": 1,
+    "rolling_mean": 3,
 }
 
 HORIZONS = [
