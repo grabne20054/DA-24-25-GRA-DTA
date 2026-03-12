@@ -28,7 +28,6 @@ class InvoicesAmount(DataCollector, DescriptiveAnalysis):
             list: List of dictionaries containing the data
         """
         try:
-            print(InvoicesAmountRepository(self.db).get())
             return InvoicesAmountRepository(self.db).get()
         except ConnectionRefusedError as e:
             print("Connection refused: ", e)
