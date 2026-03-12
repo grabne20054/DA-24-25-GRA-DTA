@@ -29,6 +29,10 @@ class RoutesAmount(BaseModel):
     name: str
     order_count: int
 
+class InvoicesAmount(BaseModel):
+    paymentDate: datetime
+    invoiceAmount: float
+
 # ItemBought Correlation
 
 class OrdersParam(BaseModel):

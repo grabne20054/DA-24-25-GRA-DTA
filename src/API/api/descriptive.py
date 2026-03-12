@@ -182,3 +182,29 @@ async def get_routes_amount(token: Annotated[str, Depends(is_token_valid)], limi
     except Exception as e:        
         raise HTTPException(status_code=404, detail=str(e))
     
+@router.get(f"/{VERSION}/{DESCRIPTIVE}/invoices-amount/", status_code=210)
+async def get_invoices_amount(last_days: int = 0, month: bool = False, year: bool = False, showzeros: bool = False, percentage: bool = False):
+    """
+    Get the amount of invoices in the company.
+
+    **Args:**
+    - token (str)
+    - last_days (int, optional): The amount of days to look back. Defaults to 0.
+    - month (bool, optional): If True, the data will be filtered by month. Defaults to False.
+    - year (bool, optional): If True, the data will be filtered by year. Defaults to False.
+    - showzeros (bool, optional): If True, the data will show the days/months/years with no invoices. Defaults to False.
+    - percentage (bool, optional): If True, the data will show the percentage of invoices in the last days, month or year in relation to the previous period. Defaults to False.
+
+    **Raises:**
+    - HTTPException: If there is an error, it will raise a 404 error.
+
+    **Returns:**
+    - dict: The amount of invoices in the company.
+
+    """
+    try:
+        data = await crud.get_invoices_amount(last_days=last_days, month=month, year=year, showzeros=showzeros, percentage=percentage)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    

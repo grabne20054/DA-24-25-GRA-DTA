@@ -198,9 +198,9 @@ class Invoice(Base):
     orderId: Mapped[UUID] = mapped_column(ForeignKey("orders.orderId"), nullable=False, unique=True)
     invoiceAmount: Mapped[int] = mapped_column(Integer, nullable=False)
     paymentDate: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    pdfUrl: Mapped[str] = mapped_column(String(255))
+    #pdfUrl: Mapped[str] = mapped_column(String(255))
 
-    deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    #deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     order: Mapped["Order"] = relationship("Order", back_populates="invoice")
 
 class Role(Base):
