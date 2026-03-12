@@ -128,7 +128,7 @@ class CustomerSignup(DataCollector):
 
         return {"growth": self._calculate_percentage_growth(dict(yearlygrowth)) if percentage else dict(yearlygrowth), "cumulative_growth": cumulative_growth, "typeofgraph": TYPEOFGRAPH}
 
-    def _getMonthlyGrowth(self, data: list[CustomerSignupParams], showzeros: bool = True, percentage: bool = False) -> dict:
+    def _getMonthlyGrowth(self, data: list[CustomerSignupParams], showzeros: bool = False, percentage: bool = False) -> dict:
         """
         gets the monthly growth of the customers
 
@@ -264,14 +264,19 @@ class CustomerSignup(DataCollector):
 
             df_cumulative_growth_filled.ffill(inplace=True)
             df_cumulative_growth_filled.fillna(0, inplace=True)
+
+            growth = df_growth_filled['growth'].to_dict()
+            cumulative_growth = df_cumulative_growth_filled['cumulative_growth'].to_dict()
         elif format == "%Y-%m":
             full_date_range = full_date_range.year.astype(str) + '-' + full_date_range.month.astype(str).str.zfill(2)
             df_cumulative_growth_filled = df_cumulative_growth.reindex(full_date_range)
 
             df_cumulative_growth_filled.ffill(inplace=True)
             df_cumulative_growth_filled.fillna(0, inplace=True)
-        else:
 
+            growth = df_growth_filled['growth'].to_dict()
+            cumulative_growth = df_cumulative_growth_filled['cumulative_growth'].to_dict()
+        else:
             df_cumulative_growth_filled = df_cumulative_growth.reindex(full_date_range)
             df_cumulative_growth_filled.index = df_cumulative_growth_filled.index.strftime(format)
             df_cumulative_growth_filled.update(df_cumulative_growth)

@@ -143,6 +143,7 @@ s
 
             for i in data:
                 month = i.orderDate.strftime("%Y-%m")
+
                 if i.orderDate <= datetime.now():
                     if not self.machine_learning:
                         total += 1
@@ -205,7 +206,6 @@ s
         except Exception as e:
             print("Error in _getGrowthByDays: ", e)
             
-
         try:    
             if showzeros:
                 growth, cumulative_growth = self._showzeros(
@@ -259,12 +259,18 @@ s
 
             df_cumulative_growth_filled.ffill(inplace=True)
             df_cumulative_growth_filled.fillna(0, inplace=True)
+
+            growth = df_growth_filled['growth'].to_dict()
+            cumulative_growth = df_cumulative_growth_filled['cumulative_growth'].to_dict()
         elif format == "%Y-%m":
             full_date_range = full_date_range.year.astype(str) + '-' + full_date_range.month.astype(str).str.zfill(2)
             df_cumulative_growth_filled = df_cumulative_growth.reindex(full_date_range)
 
             df_cumulative_growth_filled.ffill(inplace=True)
             df_cumulative_growth_filled.fillna(0, inplace=True)
+
+            growth = df_growth_filled['growth'].to_dict()
+            cumulative_growth = df_cumulative_growth_filled['cumulative_growth'].to_dict()
         else:
 
             df_cumulative_growth_filled = df_cumulative_growth.reindex(full_date_range)
