@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 from os import getenv
+os.environ["MLFLOW_HTTP_REQUEST_TIMEOUT"] = "5"
+os.environ["MLFLOW_HTTP_REQUEST_MAX_RETRIES"] = "1"
 
 from DataAnalysis.descriptive.CustomerSignup import CustomerSignup
 from DataAnalysis.descriptive.OrdersAmount import OrdersAmount
@@ -28,13 +30,15 @@ class DataPredictor:
     # LOAD BEST MODEL FROM MLFLOW
     # ---------------------------------------------------------
     def _get_best_model_id(self):
-        client = MlflowClient(tracking_uri=getenv("MLFLOWURL"))
-        mlflow.set_tracking_uri(getenv("MLFLOWURL"))
-
-        experiment = client.get_experiment_by_name("GrowthEx")
-        if experiment is None:
-            raise Exception("Experiment not found")
-
+        try:
+            client = MlflowClient(tracking_uri=getenv("MLFLOWURL"))
+            mlflow.set_tracking_uri(getenv("MLFLOWURL"))
+            experiment = client.get_experiment_by_name("GrowthEx")
+            if experiment is None:
+                raise Exception("Experiment not found")
+        except Exception:
+            raise Exception(f"Error connecting to MLflow")
+        
         runs = client.search_runs(
             experiment_ids=[experiment.experiment_id],
             filter_string=f"attributes.run_name = '{self.data_analysis}'",
