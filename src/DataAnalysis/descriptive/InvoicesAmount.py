@@ -2,6 +2,7 @@ from DataAnalysis.descriptive.DescriptiveAnalysis import DescriptiveAnalysis
 from DataAnalysis.DataCollector import DataCollector
 from DataAnalysis.db.models.InvoicesAmount import InvoicesAmountRepository
 from DataAnalysis.db.models.queryparams import InvoicesAmount as InvoicesAmountParams
+from DataAnalysis.descriptive.dependencies import showZeros, calculate_percentage_growth
 
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -111,17 +112,18 @@ s
         
         try:
             if showzeros:
-                yearlyamount, cumulative_amount = self._showzeros(
-                    amount=yearlyamount, cumulative_amount=cumulative_amount if self.cumulative else None,
+                yearlyamount, cumulative_amount = showZeros(
+                    growth=yearlyamount, cumulative_growth=cumulative_amount if self.cumulative else None,
                     end=datetime.now().year,
                     freq='YS',
-                    format='%Y'
+                    format='%Y',
+                    cumulative=self.cumulative
                 )
                 
         except Exception as e:
             print("Error in _getYearlyGrowth with showzeros: ", e)
 
-        return {"amount": self._calculate_percentage_amount(yearlyamount) if percentage else dict(yearlyamount), "cumulative_amount": cumulative_amount, "typeofgraph": TYPEOFGRAPH}
+        return {"amount": calculate_percentage_growth(yearlyamount) if percentage else dict(yearlyamount), "cumulative_amount": cumulative_amount, "typeofgraph": TYPEOFGRAPH}
 
     def _getMonthlyGrowth(self, data: list[InvoicesAmountParams], showzeros: bool = False, percentage: bool = False) -> dict:
         """
@@ -155,17 +157,18 @@ s
 
         try:
             if showzeros:
-                monthlyamount, cumulative_amount = self._showzeros(
-                    amount=monthlyamount, cumulative_amount=cumulative_amount if self.cumulative else None,
+                monthlyamount, cumulative_amount = showZeros(
+                    growth=monthlyamount, cumulative_growth=cumulative_amount if self.cumulative else None,
                     end=datetime.now(),
                     freq='MS',
-                    format='%Y-%m'
+                    format='%Y-%m',
+                    cumulative=self.cumulative
                 )
 
         except Exception as e:
             print("Error in _getMonthlyGrowth with showzeros: ", e)
 
-        return {"amount": self._calculate_percentage_amount(monthlyamount) if percentage else dict(monthlyamount), "cumulative_amount": cumulative_amount, "typeofgraph": TYPEOFGRAPH}
+        return {"amount": calculate_percentage_growth(monthlyamount) if percentage else dict(monthlyamount), "cumulative_amount": cumulative_amount, "typeofgraph": TYPEOFGRAPH}
 
     def _getGrowthByDays(self, data: list[InvoicesAmountParams], last_days: int, showzeros: bool = False, percentage: bool = False) -> dict:
         """
@@ -208,10 +211,12 @@ s
             
         try:    
             if showzeros:
-                amount, cumulative_amount = self._showzeros(
-                    amount=amount, cumulative_amount=cumulative_amount if self.cumulative else None,
+                amount, cumulative_amount = showZeros(
+                    growth=amount, cumulative_growth=cumulative_amount if self.cumulative else None,
                     end=datetime.now(), freq='D',
-                    format="%Y-%m-%d", last_days=last_days)
+                    format="%Y-%m-%d",
+                    last_days=last_days,
+                    cumulative=self.cumulative)
                 
             elif last_days > 0:
                 cumulative_amount = {k: v for k, v in cumulative_amount.items() if k >= datetime.now().date() - timedelta(days=last_days)}
@@ -219,116 +224,4 @@ s
         except Exception as e:
             print("Error in _getGrowthByDays with showzeros: ", e)
 
-        return {"amount": self._calculate_percentage_amount(dict(amount)) if percentage else dict(amount), "cumulative_amount": cumulative_amount, "typeofgraph": TYPEOFGRAPH}
-
-    def _showzeros(self, amount: defaultdict, cumulative_amount: dict, end: datetime, freq: str, format: str, last_days: int = 0) -> tuple:
-        """
-        Fills in the missing dates with zero amount and forward fills the cumulative amount values.
-
-        Args:
-            amount (defaultdict): A defaultdict containing the amount data.
-            cumulative_amount (dict): A dictionary containing the cumulative amount data.
-            end (datetime): The end date for the date range.
-            freq (str): The frequency for the date range (e.g., 'D' for daily, 'MS' for monthly start, 'YS' for yearly start).
-            format (str): The date format to use for parsing and formatting dates (e.g., "%Y-%m-%d" for daily, "%Y-%m" for monthly, "%Y" for yearly).
-            last_days (int, optional): The number of last days to consider for filtering the amount data. Only applicable when amount is calculated by days. Defaults to 0, which means no filtering.
-
-        Returns:
-            tuple: A tuple containing the updated amount and cumulative amount dictionaries with missing dates filled in and cumulative amount forward filled.
-    
-        Raises:
-            ValueError: If the date format is invalid or if the end date is before the start date.
-            KeyError: If the amount or cumulative amount data is missing for a specific date.
-        """
-
-        df_amount = pd.DataFrame.from_dict(amount, orient='index', columns=['amount'])
-        df_cumulative_amount = pd.DataFrame.from_dict(cumulative_amount, orient='index', columns=['cumulative_amount'])
-
-        df_amount.index = pd.to_datetime(df_amount.index.astype(str), format=format)
-        end = pd.to_datetime(end, format=format)
-
-        full_date_range = pd.date_range(start=df_amount.index.min(), end=end, freq=freq)
-    
-        df_amount_filled = df_amount.reindex(full_date_range, fill_value=0)
-        df_amount_filled.index = df_amount_filled.index.strftime(format)
-        df_amount_filled.update(df_amount)
-
-        if format == "%Y":
-            full_date_range = full_date_range.year
-            df_cumulative_amount_filled = df_cumulative_amount.reindex(full_date_range)
-
-            df_cumulative_amount_filled.ffill(inplace=True)
-            df_cumulative_amount_filled.fillna(0, inplace=True)
-
-            amount = df_amount_filled['amount'].to_dict()
-            cumulative_amount = df_cumulative_amount_filled['cumulative_amount'].to_dict()
-        elif format == "%Y-%m":
-            full_date_range = full_date_range.year.astype(str) + '-' + full_date_range.month.astype(str).str.zfill(2)
-            df_cumulative_amount_filled = df_cumulative_amount.reindex(full_date_range)
-
-            df_cumulative_amount_filled.ffill(inplace=True)
-            df_cumulative_amount_filled.fillna(0, inplace=True)
-
-            amount = df_amount_filled['amount'].to_dict()
-            cumulative_amount = df_cumulative_amount_filled['cumulative_amount'].to_dict()
-        else:
-
-            df_cumulative_amount_filled = df_cumulative_amount.reindex(full_date_range)
-            df_cumulative_amount_filled.index = df_cumulative_amount_filled.index.strftime(format)
-            df_cumulative_amount_filled.update(df_cumulative_amount)
-            
-            df_cumulative_amount_filled.replace(0, pd.NA, inplace=True)
-            df_cumulative_amount_filled.ffill(inplace=True)
-            df_cumulative_amount_filled.replace(pd.NA, 0, inplace=True)
-
-            if last_days > 0:
-                amount = df_amount_filled['amount'].iloc[-last_days:].to_dict()
-                cumulative_amount = df_cumulative_amount_filled['cumulative_amount'].iloc[-last_days:].to_dict()
-            elif last_days == 0:
-                amount = df_amount_filled.to_dict()['amount']
-                cumulative_amount = df_cumulative_amount_filled.to_dict()['cumulative_amount']
-
-        return amount, cumulative_amount
-    
-    def _calculate_percentage_amount(self, amount: dict) -> dict:
-        """
-        Calculates the percentage amount in relation to the previous period.
-
-        Args:
-            amount (dict): A dictionary containing the amount data.
-
-        Returns:
-            dict: A dictionary containing the percentage amount and amount data.
-            Example: {
-                "2023": [0, 100],
-                "2024": [100.0, 200]
-            }
-        """
-        first_item = True
-        try:
-            percentage_amount = {}
-            key_list = list(amount.keys())
-            for i in range(len(key_list)):
-                key = key_list[i]
-                if first_item:
-                    percentage_amount[key] = 0
-                    first_item = False
-                else:
-                    previous_key = key_list[i-1]
-                    if amount[previous_key] == 0:
-                        percentage_amount[key] = 0
-                    else:
-                        percentage_amount[key] = round((amount[key] - amount[previous_key]) / amount[previous_key] * 100, 1)
-            
-            df = pd.DataFrame.from_dict(percentage_amount, orient='index', columns=['percentage_amount'])
-
-            df_amount = pd.DataFrame.from_dict(amount, orient='index', columns=['amount'])
-
-            df_combined = pd.concat([df, df_amount], axis=1)
-
-            result = df_combined.apply(lambda row: [row["percentage_amount"], row["amount"]], axis=1).to_dict()
-
-            return result
-        except Exception as e:
-            print("Error in _calculate_percentage_amount: ", e)
-            return {}
+        return {"amount": calculate_percentage_growth(dict(amount)) if percentage else dict(amount), "cumulative_amount": cumulative_amount, "typeofgraph": TYPEOFGRAPH}
