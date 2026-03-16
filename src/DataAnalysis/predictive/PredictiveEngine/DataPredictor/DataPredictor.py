@@ -93,25 +93,25 @@ class DataPredictor:
             data = CustomerSignup().perform(
                 last_days=OPTIONS["sequence_length"] + max(HORIZONS),
                 showzeros=True,
-                machine_learning=True
+                cumulative=True
             )
         elif self.data_analysis == "OrdersGrowth":
             data = OrdersAmount().perform(
                 last_days=OPTIONS["sequence_length"] + max(HORIZONS),
                 showzeros=True,
-                machine_learning=True
+                cumulative=True
             )
         elif self.data_analysis == "CustomerGrowthMonthly":
             data = CustomerSignup().perform(
                 month=True,
                 showzeros=True,
-                machine_learning=True
+                cumulative=True
             )
         elif self.data_analysis == "OrdersGrowthMonthly":
             data = OrdersAmount().perform(
                 month=True,
                 showzeros=True,
-                machine_learning=True
+                cumulative=True
             )
         else:
             raise ValueError("Invalid analysis type")
