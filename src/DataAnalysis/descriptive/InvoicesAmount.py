@@ -36,7 +36,7 @@ class InvoicesAmount(DataCollector, DescriptiveAnalysis):
         except Exception as e:
             print("Error: ", e)
 
-    def perform(self, last_days: int = 0, year: bool = False, month: bool = False, showzeros: bool = False, machine_learning: bool = False, percentage: bool = False) -> dict:
+    def perform(self, last_days: int = 0, year: bool = False, month: bool = False, showzeros: bool = False, percentage: bool = False, cumulative: bool = False) -> dict:
         """
         Perform the analysis
 
@@ -45,8 +45,8 @@ class InvoicesAmount(DataCollector, DescriptiveAnalysis):
             year (bool, optional): If True, returns the yearly amount. Defaults to False.
             month (bool, optional): If True, returns the monthly amount. Defaults to False.
             showzeros (bool, optional): If True, shows the days with zero amount. Defaults to False.
-            machine_learning (bool, optional): If True, cumulative amount is not calculated. Defaults to False.
             percentage (bool, optional): If True, shows the percentage amount in relation to the previous period. Defaults to False.
+            cumulative (bool, optional): If True, cumulative growth is calculated. Defaults to False.
 
         Returns:
             dict: Dictionary containing amount as dictionary and cumulative amount data as dictionary if percentage is False, otherwise amount as dictionary with percentage amount and cumulative amount as dictionary with cumulative amount data. The type of graph is also included in the dictionary.
@@ -55,7 +55,7 @@ s
         Raises:
             ValueError: If the number of days is less than zero
         """
-        self.machine_learning = machine_learning
+        self.cumulative = cumulative
 
         data = self.collect()
         if data == None:
@@ -103,7 +103,7 @@ s
                     year = i.paymentDate.year
 
                     yearlyamount[year] += i.invoiceAmount
-                    if not self.machine_learning:
+                    if self.cumulative:
                         total += i.invoiceAmount
                         cumulative_amount[year] = total
         except Exception as e:
@@ -145,7 +145,7 @@ s
                 month = i.paymentDate.strftime("%Y-%m")
 
                 if i.paymentDate <= datetime.now():
-                    if not self.machine_learning:
+                    if self.cumulative:
                         total += i.invoiceAmount
                         cumulative_amount[month] = total
 
@@ -194,7 +194,7 @@ s
         try:
             for i in data:
                 if i.paymentDate.date() <= datetime.now().date():
-                    if not self.machine_learning:
+                    if self.cumulative:
                         total += i.invoiceAmount
                         cumulative_amount[i.paymentDate.date()] = total
 

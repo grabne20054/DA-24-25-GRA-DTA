@@ -35,7 +35,7 @@ class CustomerSignup(DataCollector):
         except Exception as e:
             print("Error: ", e)
 
-    def perform(self, last_days: int = 0, year: bool = False, month: bool = False, showzeros: bool = False, machine_learning: bool = False, percentage: bool = False) -> dict:
+    def perform(self, last_days: int = 0, year: bool = False, month: bool = False, showzeros: bool = False,percentage: bool = False, cumulative: bool = False) -> dict:
         """
         Perform the analysis
 
@@ -44,7 +44,7 @@ class CustomerSignup(DataCollector):
             year (bool, optional): If True, returns the yearly growth. Defaults to False.
             month (bool, optional): If True, returns the monthly growth. Defaults to False.
             showzeros (bool, optional): If True, shows the days with zero growth. Defaults to False.
-            machine_learning (bool, optional): If True, cumulative growth is not calculated. Defaults to False.
+            cumulative (bool, optional): If True, cumulative growth is not calculated. Defaults to False.
             percentage (bool, optional): If True, shows the percentage of growth in relation to the previous period. Defaults to False.
 
         Returns:
@@ -53,7 +53,7 @@ class CustomerSignup(DataCollector):
         Raises:
             ValueError: If the number of days is less than zero
         """
-        self.machine_learning = machine_learning
+        self.cumulative = cumulative
 
         data = self.collect()
         if data == None:
@@ -108,7 +108,7 @@ class CustomerSignup(DataCollector):
                     year = i.signedUp.year
                     
                     yearlygrowth[year] += 1
-                    if not self.machine_learning:
+                    if self.cumulative:
                         total += 1
                         
                         cumulative_growth[year] = total
@@ -149,7 +149,7 @@ class CustomerSignup(DataCollector):
                 month = i.signedUp.strftime("%Y-%m")
 
                 if i.signedUp <= datetime.now():
-                    if not self.machine_learning:
+                    if self.cumulative:
                         total += 1
                         cumulative_growth[month] = total
                     
@@ -199,7 +199,7 @@ class CustomerSignup(DataCollector):
         try:
             for i in data:
                     if i.signedUp.date() <= datetime.now().date():
-                        if not self.machine_learning:
+                        if self.cumulative:
                             total += 1
                             cumulative_growth[i.signedUp.date()] = total
 

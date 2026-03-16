@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.get(f"/{VERSION}/{DESCRIPTIVE}/customers-signup/", status_code=210)
-async def get_customers_signup(token: Annotated[str, Depends(is_token_valid)], last_days: int = 0, month: bool = False, year: bool = False, showzeros: bool = False, percentage: bool = False):
+async def get_customers_signup(token: Annotated[str, Depends(is_token_valid)], last_days: int = 0, month: bool = False, year: bool = False, showzeros: bool = False, percentage: bool = False, cumulative: bool = False):
     """
     Get the amount of customers that signed up in the last days, month or year.
 
@@ -23,6 +23,7 @@ async def get_customers_signup(token: Annotated[str, Depends(is_token_valid)], l
     - year (bool, optional): If True, the data will be filtered by year. Defaults to False.
     - showzeros (bool, optional): If True, the data will show the days/months/years with no customers. Defaults to False.
     - percentage (bool, optional): If True, the data will show the percentage of customers that signed up in the last days, month or year in relation to the previous period. Defaults to False.
+    - cumulative (bool, optional): If True, cumulative growth is calculated. Defaults to False.
 
     **Raises:**
     - HTTPException: If no data is found, it will raise a 404 error.
@@ -42,7 +43,7 @@ async def get_customers_signup(token: Annotated[str, Depends(is_token_valid)], l
 
     """
     try:
-        data = await crud.get_customers_signup(last_days=last_days, month=month, year=year, showzeros=showzeros, percentage=percentage)
+        data = await crud.get_customers_signup(last_days=last_days, month=month, year=year, showzeros=showzeros, percentage=percentage, cumulative=cumulative)
         return data
     except Exception as e:
         if e == "No data found":
@@ -51,7 +52,7 @@ async def get_customers_signup(token: Annotated[str, Depends(is_token_valid)], l
             raise HTTPException(status_code=400, detail=str(e))
         
 @router.get(f"/{VERSION}/{DESCRIPTIVE}/orders-amount/", status_code=210)
-async def get_orders_amount(token: Annotated[str, Depends(is_token_valid)], last_days: int = 0, month: bool = False, year: bool = False, showzeros: bool = False, percentage: bool = False):
+async def get_orders_amount(token: Annotated[str, Depends(is_token_valid)], last_days: int = 0, month: bool = False, year: bool = False, showzeros: bool = False, percentage: bool = False, cumulative: bool = False):
     """
     Get the amount of orders made in the last days, month or year.
 
@@ -62,6 +63,7 @@ async def get_orders_amount(token: Annotated[str, Depends(is_token_valid)], last
     - year (bool, optional): If True, the data will be filtered by year. Defaults to False.
     - showzeros (bool, optional): If True, the data will show the days/months/years with no orders. Defaults to False.
     - percentage (bool, optional): If True, the data will show the percentage of orders made in the last days, month or year in relation to the previous period. Defaults to False.
+    - cumulative (bool, optional): If True, cumulative growth is calculated. Defaults to False.
 
     **Raises:**
     - HTTPException: If no data is found, it will raise a 404 error.
@@ -80,7 +82,7 @@ async def get_orders_amount(token: Annotated[str, Depends(is_token_valid)], last
         }
     """
     try:
-        data = await crud.get_orders_amount(last_days=last_days, month=month, year=year, showzeros=showzeros, percentage=percentage)
+        data = await crud.get_orders_amount(last_days=last_days, month=month, year=year, showzeros=showzeros, percentage=percentage, cumulative=cumulative)
         return data
     except Exception as e:
         if e == "No data found":
@@ -183,7 +185,7 @@ async def get_routes_amount(token: Annotated[str, Depends(is_token_valid)], limi
         raise HTTPException(status_code=404, detail=str(e))
     
 @router.get(f"/{VERSION}/{DESCRIPTIVE}/invoices-amount/", status_code=210)
-async def get_invoices_amount(last_days: int = 0, month: bool = False, year: bool = False, showzeros: bool = False, percentage: bool = False):
+async def get_invoices_amount(token: Annotated[str, Depends(is_token_valid)], last_days: int = 0, month: bool = False, year: bool = False, showzeros: bool = False, percentage: bool = False, cumulative: bool = False):
     """
     Get the amount of invoices in the company.
 
@@ -194,6 +196,7 @@ async def get_invoices_amount(last_days: int = 0, month: bool = False, year: boo
     - year (bool, optional): If True, the data will be filtered by year. Defaults to False.
     - showzeros (bool, optional): If True, the data will show the days/months/years with no invoices. Defaults to False.
     - percentage (bool, optional): If True, the data will show the percentage of invoices in the last days, month or year in relation to the previous period. Defaults to False.
+    - cumulative (bool, optional): If True, cumulative growth is calculated. Defaults to False.
 
     **Raises:**
     - HTTPException: If there is an error, it will raise a 404 error.
@@ -203,8 +206,7 @@ async def get_invoices_amount(last_days: int = 0, month: bool = False, year: boo
 
     """
     try:
-        data = await crud.get_invoices_amount(last_days=last_days, month=month, year=year, showzeros=showzeros, percentage=percentage)
+        data = await crud.get_invoices_amount(last_days=last_days, month=month, year=year, showzeros=showzeros, percentage=percentage, cumulative=cumulative)
         return data
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
-    
