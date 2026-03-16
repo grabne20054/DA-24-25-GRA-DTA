@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 
-from DataAnalysis.descriptive import CustomerSignup, EmployeeAmount, ProductsAmount, ProductsMostlyBought, RoutesAmount, OrdersAmount, InvoicesAmount, AverageOrderValue
+from DataAnalysis.descriptive import CustomerSignup, EmployeeAmount, ProductsAmount, ProductsMostlyBought, RoutesAmount, OrdersAmount, InvoicesAmount
 
 from DataAnalysis.diagnostic import ProductOrdersCorrelation, ItemBoughtCorrelation
 
@@ -67,16 +67,6 @@ async def get_invoices_amount(last_days: int = 0, month: bool = False, year: boo
         raise HTTPException(status_code=400, detail="Invalid parameters: year cannot be True if last_days is greater than 0")
     return InvoicesAmount.InvoicesAmount().perform(last_days=last_days, month=month, year=year, showzeros=showzeros, percentage=percentage, cumulative=cumulative)
 
-async def get_average_order_value(last_days: int = 0, month: bool = False, year: bool = False, showzeros: bool = False, percentage: bool = False):
-    if month and year:
-        raise HTTPException(status_code=400, detail="Invalid parameters: month and year cannot be True at the same time")
-    if last_days < 0:
-        raise HTTPException(status_code=400, detail="Invalid parameters: last_days cannot be negative")
-    if month and last_days > 0:
-        raise HTTPException(status_code=400, detail="Invalid parameters: month cannot be True if last_days is greater than 0")
-    if year and last_days > 0:
-        raise HTTPException(status_code=400, detail="Invalid parameters: year cannot be True if last_days is greater than 0")
-    return AverageOrderValue.AverageOrderValue().perform(last_days=last_days, month=month, year=year, showzeros=showzeros, percentage=percentage)
 ####################### DIAGNOSTIC #######################
 
 async def get_products_orders_correlation():
