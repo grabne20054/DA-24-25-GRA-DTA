@@ -118,7 +118,7 @@ class CustomerSignup(DataCollector):
         try:
             if showzeros:
                 yearlygrowth, cumulative_growth = self._showzeros(
-                    growth=yearlygrowth, cumulative_growth=cumulative_growth,
+                    growth=yearlygrowth, cumulative_growth=cumulative_growth if self.cumulative else None,
                     end=datetime.now().year,
                     freq='YS',
                     format='%Y'
@@ -160,7 +160,7 @@ class CustomerSignup(DataCollector):
         try:
             if showzeros:
                 monthlygrowth, cumulative_growth = self._showzeros(
-                    growth=monthlygrowth, cumulative_growth=cumulative_growth,
+                    growth=monthlygrowth, cumulative_growth=cumulative_growth if self.cumulative else None,
                     end=datetime.now(),
                     freq='MS',
                     format='%Y-%m'
@@ -214,7 +214,7 @@ class CustomerSignup(DataCollector):
         try:
             if showzeros:
                 growth, cumulative_growth = self._showzeros(
-                    growth=growth, cumulative_growth=cumulative_growth,
+                    growth=growth, cumulative_growth=cumulative_growth if self.cumulative else None,
                     end=datetime.now(), freq='D',
                     format="%Y-%m-%d", last_days=last_days)
             else:

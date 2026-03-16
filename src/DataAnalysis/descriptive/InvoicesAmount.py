@@ -112,7 +112,7 @@ s
         try:
             if showzeros:
                 yearlyamount, cumulative_amount = self._showzeros(
-                    amount=yearlyamount, cumulative_amount=cumulative_amount,
+                    amount=yearlyamount, cumulative_amount=cumulative_amount if self.cumulative else None,
                     end=datetime.now().year,
                     freq='YS',
                     format='%Y'
@@ -156,7 +156,7 @@ s
         try:
             if showzeros:
                 monthlyamount, cumulative_amount = self._showzeros(
-                    amount=monthlyamount, cumulative_amount=cumulative_amount,
+                    amount=monthlyamount, cumulative_amount=cumulative_amount if self.cumulative else None,
                     end=datetime.now(),
                     freq='MS',
                     format='%Y-%m'
@@ -209,7 +209,7 @@ s
         try:    
             if showzeros:
                 amount, cumulative_amount = self._showzeros(
-                    amount=amount, cumulative_amount=cumulative_amount,
+                    amount=amount, cumulative_amount=cumulative_amount if self.cumulative else None,
                     end=datetime.now(), freq='D',
                     format="%Y-%m-%d", last_days=last_days)
                 
