@@ -54,6 +54,7 @@ class ClassifierModel(DataCollector):
         super().__init__()
         self.setup_mlflow()
         self.experiment = 'ClassifierEx'
+        self.data_analysis = 'RouteClassifier'
 
     # -------------------------------
     # MLFlow setup
@@ -64,18 +65,6 @@ class ClassifierModel(DataCollector):
             logger.info("Successfully connected to MLFlow server")
         except Exception:
             logger.exception("Error connecting to MLFlow server")
-
-    def get_experiment_id(self, experiment_name: str) -> str:
-        try:
-            client = mlflow.tracking.MlflowClient(tracking_uri=getenv("MLFLOWURL"))
-            mlflow.set_tracking_uri(getenv("MLFLOWURL"))
-            experiment = client.get_experiment_by_name(experiment_name)
-            if experiment is None:
-                raise Exception(f"Experiment '{experiment_name}' not found")
-            return experiment.experiment_id
-        except Exception as e:
-            logger.exception(f"Error retrieving experiment ID for '{experiment_name}'")
-            raise Exception(f"Error retrieving experiment ID for '{experiment_name}'") from e
 
     # -------------------------------
     # Data collection
@@ -169,49 +158,50 @@ class ClassifierModel(DataCollector):
         return None
 
     def run(self, modeldata: ClassificationModelData) -> ClassificationModelParams:
+        mlflow.set_experiment(self.experiment)
 
-        with mlflow.start_run(experiment_id=self.get_experiment_id(self.experiment)):
+        mlflow.start_run(run_name=self.data_analysis)
 
-            results = {}
-            for neighbor in range(1, self.neighbors):
-                logger.info(f"Training KNN with n_neighbors={neighbor}")
+        results = {}
+        for neighbor in range(1, self.neighbors):
+            logger.info(f"Training KNN with n_neighbors={neighbor}")
 
-                try:
-                    model = KNeighborsClassifier(n_neighbors=neighbor)
-                    model.fit(modeldata.X_train, modeldata.y_train)
-                    y_pred = model.predict(modeldata.X_test)
+            try:
+                model = KNeighborsClassifier(n_neighbors=neighbor)
+                model.fit(modeldata.X_train, modeldata.y_train)
+                y_pred = model.predict(modeldata.X_test)
 
-                except Exception as e:
-                    logger.exception(f"Error training KNN with n_neighbors={neighbor}")
-                    raise Exception(f"Error training KNN with n_neighbors={neighbor}")
+            except Exception as e:
+                logger.exception(f"Error training KNN with n_neighbors={neighbor}")
+                raise Exception(f"Error training KNN with n_neighbors={neighbor}")
 
 
-                accuracy = accuracy_score(y_true=modeldata.y_test, y_pred=y_pred)
-                precision = precision_score(y_true=modeldata.y_test, y_pred=y_pred, average='weighted', zero_division=np.nan)
-                recall = recall_score(y_true=modeldata.y_test, y_pred=y_pred, average='weighted', zero_division=np.nan)
+            accuracy = accuracy_score(y_true=modeldata.y_test, y_pred=y_pred)
+            precision = precision_score(y_true=modeldata.y_test, y_pred=y_pred, average='weighted', zero_division=np.nan)
+            recall = recall_score(y_true=modeldata.y_test, y_pred=y_pred, average='weighted', zero_division=np.nan)
 
-                overall_score = 2*(1+accuracy)+ precision + recall
+            overall_score = 2*(1+accuracy)+ precision + recall
 
-                results[(neighbor, model)] = {
-                    "overall_score": overall_score,
-                    "accuracy": accuracy,
-                    "precision": precision,
-                    "recall": recall,
-                }
+            results[(neighbor, model)] = {
+                "overall_score": overall_score,
+                "accuracy": accuracy,
+                "precision": precision,
+                "recall": recall,
+            }
 
-            best_params = max(results, key=lambda x: results[x]['overall_score'])
+        best_params = max(results, key=lambda x: results[x]['overall_score'])
 
-            return ClassificationModelParams(
-                run_name="RouteClassifier",
-                overall_score=results[best_params]['overall_score'],
-                accuracy=results[best_params]['accuracy'],
-                precision=results[best_params]['precision'],
-                recall=results[best_params]['recall'],
-                model=best_params[1],
-                input_example=modeldata.X_train[0],
-                scaler_X=modeldata.scaler_X
+        return ClassificationModelParams(
+            run_name="RouteClassifier",
+            overall_score=results[best_params]['overall_score'],
+            accuracy=results[best_params]['accuracy'],
+            precision=results[best_params]['precision'],
+            recall=results[best_params]['recall'],
+            model=best_params[1],
+            input_example=modeldata.X_train[0],
+            scaler_X=modeldata.scaler_X
 
-            )
+        )
 
 
     # -------------------------------
@@ -219,7 +209,6 @@ class ClassifierModel(DataCollector):
     # -------------------------------
     def save_best_model(self, params: ClassificationModelParams):
         try:
-            mlflow.log_param('run_name', params.run_name)
             mlflow.log_param('overall_score', params.overall_score)
             mlflow.log_param('accuracy', params.accuracy)
             mlflow.log_param('precision', params.precision)

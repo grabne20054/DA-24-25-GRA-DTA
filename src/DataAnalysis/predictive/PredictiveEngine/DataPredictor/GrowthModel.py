@@ -86,18 +86,6 @@ class GrowthModel(PredictiveAnalysis):
         except Exception:
             logger.exception("Error connecting to MLFlow server")
 
-    def get_experiment_id(self, experiment_name: str) -> str:
-        try:
-            client = mlflow.tracking.MlflowClient(tracking_uri=getenv("MLFLOWURL"))
-            mlflow.set_tracking_uri(getenv("MLFLOWURL"))
-            experiment = client.get_experiment_by_name(experiment_name)
-            if experiment is None:
-                raise Exception(f"Experiment '{experiment_name}' not found")
-            return experiment.experiment_id
-        except Exception as e:
-            logger.exception(f"Error retrieving experiment ID for '{experiment_name}'")
-            raise Exception(f"Error retrieving experiment ID for '{experiment_name}'") from e
-
     # -------------------------------
     # Data collection
     # -------------------------------
@@ -298,38 +286,39 @@ class GrowthModel(PredictiveAnalysis):
         return None
 
     def run(self, modeldata: ModelData) -> ModelParams:
+        mlflow.set_experiment(self.experiment)
 
-        with mlflow.start_run(experiment_id=self.get_experiment_id(self.experiment)):
-            
-            results = {}
-            for dropout in DROPOUT:
-                for learning_rate in LEARNING_RATE:
-                    for epoch in EPOCHS:
-                        for l2_reg in L2_REG:
-                            logger.info(f"Running with {NUM_UNITS} LSTM cells, dropout={dropout}, lr={learning_rate}, l2={l2_reg}")
-                            logger.info(f"Training data shape: {modeldata.X_train.shape}, {modeldata.y_train.shape}")
+        mlflow.start_run(run_name=self.data_analysis)
 
-                            model = Sequential()
-                            model.add(LSTM(NUM_UNITS, dropout=dropout, return_sequences=False, input_shape=(modeldata.X_train.shape[1], modeldata.X_train.shape[2]), kernel_regularizer=l2(l2_reg)))
-                            model.add(Dense(len(HORIZONS)))
-                            model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse', metrics=['mae'])
-                            early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-                            history = model.fit(modeldata.X_train, modeldata.y_train, epochs=epoch, batch_size=32, validation_data=(modeldata.X_test, modeldata.y_test), verbose=1, callbacks=[early_stopping])
+        results = {}
+        for dropout in DROPOUT:
+            for learning_rate in LEARNING_RATE:
+                for epoch in EPOCHS:
+                    for l2_reg in L2_REG:
+                        logger.info(f"Running with {NUM_UNITS} LSTM cells, dropout={dropout}, lr={learning_rate}, l2={l2_reg}")
+                        logger.info(f"Training data shape: {modeldata.X_train.shape}, {modeldata.y_train.shape}")
 
-                            best_epoch = np.argmin(history.history['val_loss'])
-                            train_mse = history.history['loss'][best_epoch]
-                            val_mse = history.history['val_loss'][best_epoch]
-                            train_mae = history.history['mae'][best_epoch]
-                            val_mae = history.history['val_mae'][best_epoch]
+                        model = Sequential()
+                        model.add(LSTM(NUM_UNITS, dropout=dropout, return_sequences=False, input_shape=(modeldata.X_train.shape[1], modeldata.X_train.shape[2]), kernel_regularizer=l2(l2_reg)))
+                        model.add(Dense(len(HORIZONS)))
+                        model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse', metrics=['mae'])
+                        early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+                        history = model.fit(modeldata.X_train, modeldata.y_train, epochs=epoch, batch_size=32, validation_data=(modeldata.X_test, modeldata.y_test), verbose=1, callbacks=[early_stopping])
 
-                            results[(NUM_UNITS, dropout, learning_rate, best_epoch, l2_reg, model)] = {
-                                'train_mse': train_mse,
-                                'val_mse': val_mse,
-                                'train_mae': train_mae,
-                                'val_mae': val_mae
-                            }
+                        best_epoch = np.argmin(history.history['val_loss'])
+                        train_mse = history.history['loss'][best_epoch]
+                        val_mse = history.history['val_loss'][best_epoch]
+                        train_mae = history.history['mae'][best_epoch]
+                        val_mae = history.history['val_mae'][best_epoch]
 
-                            logger.info(f"Train MSE={train_mse}, Val MSE={val_mse}, Train MAE={train_mae}, Val MAE={val_mae}")
+                        results[(NUM_UNITS, dropout, learning_rate, best_epoch, l2_reg, model)] = {
+                            'train_mse': train_mse,
+                            'val_mse': val_mse,
+                            'train_mae': train_mae,
+                            'val_mae': val_mae
+                        }
+
+                        logger.info(f"Train MSE={train_mse}, Val MSE={val_mse}, Train MAE={train_mae}, Val MAE={val_mae}")
 
         val_results = {key: results[key]['val_mse'] for key in results.keys()}
         num_cells, dropout_rate, lr, num_epochs, l2_reg, model = min(val_results, key=val_results.get)
@@ -360,7 +349,6 @@ class GrowthModel(PredictiveAnalysis):
     # -------------------------------
     def save_best_model(self, params: ModelParams):
         try:
-            mlflow.log_param('run_name', params.run_name)
             mlflow.log_param('num_units', params.num_units)
             mlflow.log_param('dropout', params.dropout)
             mlflow.log_param('learning_rate', params.learning_rate)
