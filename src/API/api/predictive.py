@@ -153,3 +153,21 @@ async def get_cumulative_orders_growth(token: Annotated[str, Depends(is_token_va
     
     data = await crud.get_cumulative_orders_growth(one_day=one_day, seven_days=seven_days ,month=month, year=year)
     return data
+
+@router.get(f"/{VERSION}/{PREDICTIVE}/route-classifier/", status_code=212)
+async def get_route_classifier(token: Annotated[str, Depends(is_token_valid)], latitude: float, longitude: float):
+    """
+    Get the route classifier data.
+
+    **Args:**
+    - token (str)
+
+    **Raises:**
+    - HTTPException: If there is an error, it will raise a 400 error.
+
+    **Returns:**
+    - dict: The route classifier data.
+
+    """
+    data = await crud.get_routes_classifier(latitude, longitude)
+    return data

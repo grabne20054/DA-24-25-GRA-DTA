@@ -5,7 +5,7 @@ services:
   model-optimizer:
     build:
       context: ../../../
-      dockerfile: DataAnalysis/predictive/PredictiveEngine/ModelOptimizer/Dockerfile
+      dockerfile: DataAnalysis/predictive/ModelOptimizer/Dockerfile
 
     restart: always
       
