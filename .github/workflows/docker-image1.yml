@@ -13,14 +13,38 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-        
+       - name: Start PostgreSQL
+        run: |
+          docker run -d \
+            --name test-db \
+            -e POSTGRES_USER=testuser \
+            -e POSTGRES_PASSWORD=testpass \
+            -e POSTGRES_DB=testdb \
+            -p 5432:5432 \
+            postgres:15
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          for i in {1..10}; do
+            docker exec test-db pg_isready -U testuser && break
+            echo "Waiting for database..."
+            sleep 3
+          done
+
+      - name: Set DATABASE_URL
+        run: echo "DATABASE_URL=postgresql://testuser:testpass@localhost:5432/testdb" >> $GITHUB_ENV
+
       - name: Build Docker image
         run: |
           docker build -t test-image -f ./src/API/Dockerfile ./src/
 
       - name: Run container, check logs & HTTP
         run: |
-          docker run --name test-run -d -p 8000:8000 test-image
+          docker run -d \
+            --name test-run \
+            --env DATABASE_URL=$DATABASE_URL \
+            -p 8000:8000 \
+            test-image
 
           sleep 20
 
