@@ -1,6 +1,5 @@
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from DataAnalysis.predictive.ModelOptimizer.ModelManager import ModelManager
 from DataAnalysis.predictive.PredictiveEngine.DataPredictor.GrowthModel import GrowthModel
 from DataAnalysis.descriptive.CustomerSignup import CustomerSignup
 from DataAnalysis.descriptive.OrdersAmount import OrdersAmount
