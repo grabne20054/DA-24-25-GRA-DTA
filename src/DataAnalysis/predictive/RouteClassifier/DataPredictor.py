@@ -93,6 +93,8 @@ class DataPredictor(DataCollector):
     # ---------------------------------------------------------
     def predict(self, coords: tuple[float, float]):
 
+        self._checkCoords(coords)
+
         if self.model is None:
             self.load_best_model()
 
@@ -114,3 +116,12 @@ class DataPredictor(DataCollector):
         route_to_number = {route: i for i, route in enumerate(unique_routes)}
         number_to_route = {i: route for route, i in route_to_number.items()}
         return number_to_route.get(discrete_number, None)
+    
+    def _checkCoords(self, coords: tuple[float, float]):
+        if not isinstance(coords, tuple) or len(coords) != 2:
+            raise ValueError("Coordinates must be a tuple of (latitude, longitude)")
+        lat, lon = coords
+        if not (-90 <= lat <= 90):
+            raise ValueError("Latitude must be between -90 and 90")
+        if not (-180 <= lon <= 180):
+            raise ValueError("Longitude must be between -180 and 180")
