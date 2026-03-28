@@ -4,12 +4,12 @@ from DataAnalysis.descriptive import CustomerSignup, EmployeeAmount, ProductsAmo
 
 from DataAnalysis.diagnostic import ProductOrdersCorrelation, ItemBoughtCorrelation
 
-from DataAnalysis.predictive.PredictiveEngine.DataPredictor import DataPredictor
+from DataAnalysis.predictive.PredictiveEngine.DataPredictor import DataPredictor as DataPredictorPredictiveEngine
 
 from DataAnalysis.db.models.Auth import AuthRepository
 from DataAnalysis.dependencies import get_db
 
-from DataAnalysis.predictive.RouteClassifier.DataPredictor import DataPredictor
+from DataAnalysis.predictive.RouteClassifier.DataPredictor import DataPredictor as RouteClassifierDataPredictor
 
 from api.auth import generate_jwt_token
 
@@ -86,13 +86,13 @@ async def get_items_bought_correlation(productId: str, amount_combined_products:
 async def get_customers_growth():
     try:
 
-        return DataPredictor.DataPredictor("CustomerGrowth").predict()
+        return DataPredictorPredictiveEngine.DataPredictor("CustomerGrowth").predict()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
 async def get_customers_growth_month():
     try:
-        return DataPredictor.DataPredictor("CustomerGrowthMonthly", month=True).predict()
+        return DataPredictorPredictiveEngine.DataPredictor("CustomerGrowthMonthly", month=True).predict()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -109,21 +109,21 @@ async def get_cumulative_customers_growth(one_day: bool = False, seven_days: boo
             option = "year"
         else: 
             raise HTTPException(status_code=400, detail="Invalid parameters")
-    
-        return DataPredictor.DataPredictor("CumulativeCustomerGrowth").predict("CumulativeCustomerGrowth", option)
+
+        return DataPredictorPredictiveEngine.DataPredictor("CumulativeCustomerGrowth").predict("CumulativeCustomerGrowth", option)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 async def get_orders_growth():
     try:
 
-        return DataPredictor.DataPredictor("OrdersGrowth").predict()
+        return DataPredictorPredictiveEngine.DataPredictor("OrdersGrowth").predict()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
 async def get_orders_growth_month():
     try:
-        return DataPredictor.DataPredictor("OrdersGrowthMonthly", month=True).predict()
+        return DataPredictorPredictiveEngine.DataPredictor("OrdersGrowthMonthly", month=True).predict()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -140,8 +140,8 @@ async def get_cumulative_orders_growth(one_day: bool = False, seven_days: bool =
             option = "year"
         else: 
             raise HTTPException(status_code=400, detail="Invalid parameters")
-    
-        return DataPredictor.DataPredictor("CumulativeOrdersGrowth").predict("CumulativeOrdersGrowth", option)
+
+        return DataPredictorPredictiveEngine.DataPredictor("CumulativeOrdersGrowth").predict("CumulativeOrdersGrowth", option)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -159,6 +159,6 @@ async def authenticate(email:str, password: str):
 
 async def get_routes_classifier(latitude: float, longitude: float):
     try:
-        return DataPredictor("RouteClassifier").predict((latitude, longitude))
+        return RouteClassifierDataPredictor("RouteClassifier").predict((latitude, longitude))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
