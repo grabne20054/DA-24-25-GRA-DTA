@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 class CustomerSignup(BaseModel):
     signedUp: datetime
@@ -45,6 +45,10 @@ class OrdersProductsParam(BaseModel):
     orderId: uuid4
     productId: uuid4
 
+class RouteClassifierParam(BaseModel):
+    routeId: UUID
+    latitude: float
+    longitude: float
 
 # AUTH
 

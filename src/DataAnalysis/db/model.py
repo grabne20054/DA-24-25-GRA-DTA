@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, String, ForeignKey, DateTime, Table, Column, Boolean, UUID
+from sqlalchemy import Integer, String, ForeignKey, DateTime, Table, Column, Boolean, UUID, Float
 from sqlalchemy.orm import declarative_base, relationship, Mapped, mapped_column
 from datetime import datetime
 from typing import List
@@ -101,6 +101,8 @@ class Address(Base):
     postCode: Mapped[str] = mapped_column(String(10), nullable=False)
     country: Mapped[str] = mapped_column(String(40), nullable=False)
     state: Mapped[str] = mapped_column(String(40), nullable=False)
+    latitude: Mapped[float] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float] = mapped_column(Float, nullable=True)
     modifiedAt: Mapped[datetime] = mapped_column(DateTime, default=None, nullable=True)
     deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 

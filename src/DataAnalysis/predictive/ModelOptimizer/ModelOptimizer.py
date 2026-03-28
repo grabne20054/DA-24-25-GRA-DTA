@@ -1,9 +1,10 @@
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from DataAnalysis.predictive.PredictiveEngine.ModelOptimizer.ModelManager import ModelManager
-from DataAnalysis.predictive.PredictiveEngine.ModelOptimizer.GrowthModel import GrowthModel
+from DataAnalysis.predictive.ModelOptimizer.ModelManager import ModelManager
+from DataAnalysis.predictive.PredictiveEngine.DataPredictor.GrowthModel import GrowthModel
 from DataAnalysis.descriptive.CustomerSignup import CustomerSignup
 from DataAnalysis.descriptive.OrdersAmount import OrdersAmount
+from DataAnalysis.predictive.RouteClassifier.ClassifierModel import ClassifierModel
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -25,12 +26,19 @@ class ModelOptimizer:
         for model in [self.customerGrowth, self.ordersGrowth, self.customerGrowthMonthly, self.ordersGrowthMonthly]:
             t = Thread(target=model.perform, args=(MONTHLY_OPTIONS if model.month else OPTIONS, model))
             t.start()
+    
+    def spawn_classifier_optimizer(self):
+        classifier_model = ClassifierModel()
+        classifier_model.perform()
 
 
 if __name__ == "__main__":
     while True:
         try:
-            ModelOptimizer().spawn_optimizer()
+            optimizer = ModelOptimizer()
+            optimizer.spawn_optimizer()
+            optimizer.spawn_classifier_optimizer()
+
         except Exception as e:
             logger.error(f"Error occurred: {e}")
         finally:

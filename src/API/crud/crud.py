@@ -9,6 +9,8 @@ from DataAnalysis.predictive.PredictiveEngine.DataPredictor import DataPredictor
 from DataAnalysis.db.models.Auth import AuthRepository
 from DataAnalysis.dependencies import get_db
 
+from DataAnalysis.predictive.RouteClassifier.DataPredictor import DataPredictor
+
 from api.auth import generate_jwt_token
 
 from dotenv import load_dotenv
@@ -153,3 +155,10 @@ async def authenticate(email:str, password: str):
         return generate_jwt_token(email=email)
     else:
         raise HTTPException(status_code=401, detail="Not authorized")
+
+
+async def get_routes_classifier(latitude: float, longitude: float):
+    try:
+        return DataPredictor("RouteClassifier").predict((latitude, longitude))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

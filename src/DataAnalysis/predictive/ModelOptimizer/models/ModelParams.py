@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 import tensorflow as tf
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
 
 class ModelParams(BaseModel, arbitrary_types_allowed=True):
     run_name: str
@@ -20,3 +22,13 @@ class ModelParams(BaseModel, arbitrary_types_allowed=True):
     lag: int
     rolling_mean: int
     sequence_length: int
+
+class ClassificationModelParams(BaseModel, arbitrary_types_allowed=True):
+    run_name: str
+    overall_score: float
+    accuracy: float
+    precision: float
+    recall: float
+    model: KNeighborsClassifier
+    input_example: list
+    scaler_X: StandardScaler

@@ -28,8 +28,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../s
 from DataAnalysis.predictive.PredictiveAnalysis import PredictiveAnalysis
 from DataAnalysis.descriptive.OrdersAmount import OrdersAmount
 from DataAnalysis.descriptive.CustomerSignup import CustomerSignup
-from DataAnalysis.predictive.PredictiveEngine.ModelOptimizer.models.ModelParams import ModelParams
-from DataAnalysis.predictive.PredictiveEngine.ModelOptimizer.models.ModelData import ModelData
+from DataAnalysis.predictive.ModelOptimizer.models.ModelParams import ModelParams
+from DataAnalysis.predictive.ModelOptimizer.models.ModelData import ModelData
 
 from DataAnalysis.predictive.dependencies import HORIZONS
 
@@ -72,6 +72,7 @@ class GrowthModel(PredictiveAnalysis):
         self.setup_mlflow()
         self.month = month
         self.data = self.collect()
+        self.experiment = 'GrowthEx'
 
         logger.info(f"Data collected for {self.data_analysis} with month={self.month}: {self.data}")
 
@@ -81,8 +82,6 @@ class GrowthModel(PredictiveAnalysis):
     def setup_mlflow(self):
         try:
             mlflow.set_tracking_uri(getenv('MLFLOWURL'))
-            if mlflow.set_experiment("GrowthEx") is None:
-                mlflow.create_experiment("GrowthEx")
             logger.info("Successfully connected to MLFlow server")
         except Exception:
             logger.exception("Error connecting to MLFlow server")
@@ -93,8 +92,8 @@ class GrowthModel(PredictiveAnalysis):
     def collect(self):
         try:
             if self.month:
-                return self.data_source.perform(showzeros=True, machine_learning=True, month=True)
-            return self.data_source.perform(showzeros=True, machine_learning=True)
+                return self.data_source.perform(showzeros=True, month=True)
+            return self.data_source.perform(showzeros=True)
         except Exception:
             logger.exception("Error in collect")
             return None
@@ -287,6 +286,9 @@ class GrowthModel(PredictiveAnalysis):
         return None
 
     def run(self, modeldata: ModelData) -> ModelParams:
+        mlflow.set_experiment(self.experiment)
+
+        mlflow.start_run(run_name=self.data_analysis)
 
         results = {}
         for dropout in DROPOUT:
@@ -347,7 +349,6 @@ class GrowthModel(PredictiveAnalysis):
     # -------------------------------
     def save_best_model(self, params: ModelParams):
         try:
-            mlflow.start_run(run_name=params.run_name)
             mlflow.log_param('num_units', params.num_units)
             mlflow.log_param('dropout', params.dropout)
             mlflow.log_param('learning_rate', params.learning_rate)
