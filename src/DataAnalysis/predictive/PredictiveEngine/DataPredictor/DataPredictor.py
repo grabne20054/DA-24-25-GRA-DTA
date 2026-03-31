@@ -53,10 +53,13 @@ class DataPredictor:
         return best_run.info.run_id, best_run.info.artifact_uri
 
     def _load_scaler(self, run_id: str, artifact_name: str):
-        local_path = mlflow.artifacts.download_artifacts(
-            run_id=run_id,
-            artifact_path=f"model/{artifact_name}"
-        )
+        try:
+            local_path = mlflow.artifacts.download_artifacts(
+                run_id=run_id,
+                artifact_path=f"model/{artifact_name}"
+            )
+        except Exception as e:
+            raise Exception("No Artifacts found")
 
         with open(local_path, "rb") as f:
             return pickle.load(f)
@@ -64,9 +67,13 @@ class DataPredictor:
     def load_best_model(self):
         run_id, artifact_uri = self._get_best_model_id()
 
-        model_uri = f"{artifact_uri}/model"
-        self.model = load_model(model_uri)
-
+        try: 
+            model_uri = f"runs:/{run_id}/model"
+            self.model = load_model(model_uri)
+        except Exception as e:
+            raise Exception("Model could not be loaded")
+            
+    
         self.scaler_X = self._load_scaler(run_id, "scaler_X.pkl")
         self.scaler_y = self._load_scaler(run_id, "scaler_y.pkl")
 
